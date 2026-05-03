@@ -88,7 +88,7 @@ export default function App() {
                         <span className='pill'>React 18+</span>
                         <a
                             className='pill pill-cta'
-                            href='https://npmjs.com/package/react-vast-player'
+                            href='https://www.npmjs.com/package/react-vast-player'
                             target='_blank'
                             rel='noreferrer'
                         >
@@ -142,7 +142,7 @@ export default function App() {
                                     },
                                     {
                                         id: '2',
-                                        src: 'https://www.w3schools.com/html/movie.mp4',
+                                        src: 'https://www.pexels.com/download/video/32091954/',
                                         title: 'Big Buck Bunny',
                                     },
                                 ]}
@@ -168,13 +168,13 @@ export default function App() {
                                     },
                                     {
                                         id: '2',
-                                        src: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+                                        src: 'https://www.w3schools.com/html/mov_bbb.mp4',
                                         title: 'Clip B',
                                     },
-                                    {
+                                      {
                                         id: '3',
-                                        src: 'https://www.w3schools.com/html/mov_bbb.mp4',
-                                        title: 'Clip C',
+                                        src: 'https://www.pexels.com/download/video/4121894/',
+                                        title: 'Clip B',
                                     },
                                 ]}
                                 vastUrls={[VAST]}
@@ -222,7 +222,7 @@ export default function App() {
                 <span className='footer-dot'>·</span>
                 <span>react-vast-player</span>
                 <span className='footer-dot'>·</span>
-                <a href='https://github.com' target='_blank' rel='noreferrer'>
+                <a href='https://github.com/rwndy/react-vast-player' target='_blank' rel='noreferrer'>
                     GitHub ↗
                 </a>
             </footer>
