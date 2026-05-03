@@ -85,7 +85,7 @@ export default function App() {
                     </div>
                     <div className='pills'>
                         <span className='pill'>VAST 2–4</span>
-                        <span className='pill'>React 18+</span>
+                        <span className='pill'>React 19+</span>
                         <a
                             className='pill pill-cta'
                             href='https://www.npmjs.com/package/react-vast-player'
