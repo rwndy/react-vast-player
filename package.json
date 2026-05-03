@@ -2,6 +2,14 @@
   "name": "react-vast-player",
   "version": "0.1.0",
   "description": "Mode-agnostic React video engine with first-class VAST support. No plugins.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rwndy/react-vast-player.git"
+  },
+  "homepage": "https://github.com/rwndy/react-vast-player#readme",
+  "bugs": {
+    "url": "https://github.com/rwndy/react-vast-player/issues"
+  },
   "keywords": [
     "react",
     "video",
