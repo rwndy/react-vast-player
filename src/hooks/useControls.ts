@@ -1,0 +1,102 @@
+'use client'
+
+import { useCallback, useEffect, useReducer, useRef, useEffectEvent } from 'react'
+import type { IPlaybackControl, ControlsState } from '../types/index.js'
+
+const INITIAL: ControlsState = {
+  playing: false,
+  currentTime: 0,
+  duration: 0,
+  buffering: false,
+  volume: 1,
+  muted: false,
+  fullscreen: false,
+}
+
+type Action =
+  | { type: 'PLAY' | 'PAUSE' | 'BUFFER' | 'CANPLAY' }
+  | { type: 'TIME'; currentTime: number; duration: number }
+  | { type: 'VOL'; volume: number; muted: boolean }
+  | { type: 'FULL'; fullscreen: boolean }
+
+function reducer(state: ControlsState, action: Action): ControlsState {
+  switch (action.type) {
+    case 'PLAY':
+      return { ...state, playing: true, buffering: false }
+    case 'PAUSE':
+      return { ...state, playing: false }
+    case 'BUFFER':
+      return { ...state, buffering: true }
+    case 'CANPLAY':
+      return { ...state, buffering: false }
+    case 'TIME':
+      return { ...state, currentTime: action.currentTime, duration: action.duration }
+    case 'VOL':
+      return { ...state, volume: action.volume, muted: action.muted }
+    case 'FULL':
+      return { ...state, fullscreen: action.fullscreen }
+    default:
+      return state
+  }
+}
+
+export interface UseControlsResult {
+  state: ControlsState
+  containerRef: React.RefObject<HTMLDivElement | null>
+  play: () => void
+  pause: () => void
+  seek: (t: number) => void
+  setVolume: (v: number) => void
+  toggleMute: () => void
+  toggleFullscreen: () => void
+}
+
+// ISP: depends on IPlaybackControl only, not the full PlayerEngine
+export function useControls(player: IPlaybackControl | null): UseControlsResult {
+  const [state, dispatch] = useReducer(reducer, INITIAL)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  const onTime = useEffectEvent(
+    ({ currentTime, duration }: { currentTime: number; duration: number }) => {
+      dispatch({ type: 'TIME', currentTime, duration })
+    },
+  )
+
+  useEffect(() => {
+    const engine = player as any
+    if (!engine?.bus) return
+
+    dispatch({ type: 'VOL', volume: engine.tech?.volume ?? 1, muted: engine.muted ?? false })
+
+    const off = [
+      engine.bus.on('play', () => dispatch({ type: 'PLAY' })),
+      engine.bus.on('pause', () => dispatch({ type: 'PAUSE' })),
+      engine.bus.on('buffering', () => dispatch({ type: 'BUFFER' })),
+      engine.bus.on('canplay', () => dispatch({ type: 'CANPLAY' })),
+      engine.bus.on('timeupdate', onTime),
+      engine.bus.on('volumechange', ({ volume, muted }: { volume: number; muted: boolean }) =>
+        dispatch({ type: 'VOL', volume, muted }),
+      ),
+    ]
+
+    const onFullChange = () => dispatch({ type: 'FULL', fullscreen: !!document.fullscreenElement })
+
+    document.addEventListener('fullscreenchange', onFullChange)
+    off.push(() => document.removeEventListener('fullscreenchange', onFullChange))
+
+    return () => off.forEach(fn => fn())
+  }, [player])
+
+  const play = useCallback(() => player?.play(), [player])
+  const pause = useCallback(() => player?.pause(), [player])
+  const seek = useCallback((t: number) => player?.seek(t), [player])
+  const setVolume = useCallback((v: number) => player?.volume(v), [player])
+  const toggleMute = useCallback(() => player?.mute(!state.muted), [player, state.muted])
+  const toggleFullscreen = useCallback(() => {
+    const el = containerRef.current
+    if (!el) return
+    document.fullscreenElement ? document.exitFullscreen() : el.requestFullscreen()
+  }, [])
+
+  return { state, containerRef, play, pause, seek, setVolume, toggleMute, toggleFullscreen }
+}

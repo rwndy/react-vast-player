@@ -1,0 +1,7 @@
+src/
+tests/
+example/
+tsdown.config.ts
+tsconfig.json
+*.test.ts
+.github/
