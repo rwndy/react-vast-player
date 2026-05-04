@@ -46,8 +46,6 @@ export function usePlayerEngine(): UsePlayerEngineResult {
     storeRef.current!.getServerSnapshot,
   )
 
-  console.log('from player engine =>', playerState)
-
   useEffect(() => {
     const el = videoRef.current
     if (!el) return

@@ -47,7 +47,6 @@ export function PlaylistPlayer({
     skipAd,
   } = api
 
-  console.log('playlist player => ', playerState)
   return (
     <div
       ref={containerRef}
