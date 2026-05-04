@@ -2,6 +2,7 @@
 
 import { memo, useCallback } from 'react'
 import type { NamedExoticComponent } from 'react'
+import { Maximize, Play, Pause, VolumeOff, Volume2 } from 'lucide-react'
 import type { ControlsState } from '../types/index.js'
 
 interface ControlBarProps {
@@ -74,20 +75,20 @@ export const ControlBar: NamedExoticComponent<ControlBarProps> = memo(function C
           onClick={state.playing ? onPause : onPlay}
           label={state.playing ? 'Pause' : 'Play'}
         >
-          {state.playing ? '⏸' : '▶'}
+          {state.playing ? <Pause width={16} height={16} /> : <Play width={16} height={16} />}
         </CtrlBtn>
         <span style={{ color: '#ccc', fontSize: 11, fontVariantNumeric: 'tabular-nums' }}>
           {fmt(state.currentTime)} / {fmt(state.duration)}
         </span>
         <div style={{ flex: 1 }} />
         <CtrlBtn onClick={onToggleMute} label={state.muted ? 'Unmute' : 'Mute'}>
-          {state.muted ? '🔇' : '🔊'}
+          {state.muted ? <VolumeOff width={16} height={16} /> : <Volume2 width={16} height={16} />}
         </CtrlBtn>
         <CtrlBtn
           onClick={onToggleFullscreen}
           label={state.fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
         >
-          ⛶
+          <Maximize width={16} height={16} />
         </CtrlBtn>
       </div>
     </div>
