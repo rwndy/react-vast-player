@@ -39,6 +39,9 @@ export const ControlBar: NamedExoticComponent<ControlBarProps> = memo(function C
     },
     [onSeek],
   )
+ const safeDuration = isFinite(state.duration) && state.duration > 0 ? state.duration : 0
+ const safeTime = isFinite(state.currentTime) && state.currentTime >= 0 ? state.currentTime : 0
+ const isLoading = safeDuration === 0
 
   return (
     <div
@@ -62,13 +65,18 @@ export const ControlBar: NamedExoticComponent<ControlBarProps> = memo(function C
       <input
         type="range"
         min={0}
-        max={state.duration || 100}
+        max={safeDuration || 100}
+        value={isFinite(state.currentTime) ? state.currentTime : 0}
         step={0.1}
-        value={state.currentTime}
         onChange={handleSeek}
         aria-label="Seek"
         disabled={disabled}
-        style={{ width: '100%', accentColor: '#4a9eff', cursor: 'pointer' }}
+        style={{
+          width: '100%',
+          accentColor: '#4a9eff',
+          cursor: isLoading ? 'default' : 'pointer',
+          opacity: isLoading ? 0.4 : 1,
+        }}
       />
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <CtrlBtn
@@ -78,7 +86,7 @@ export const ControlBar: NamedExoticComponent<ControlBarProps> = memo(function C
           {state.playing ? <Pause width={16} height={16} /> : <Play width={16} height={16} />}
         </CtrlBtn>
         <span style={{ color: '#ccc', fontSize: 11, fontVariantNumeric: 'tabular-nums' }}>
-          {fmt(state.currentTime)} / {fmt(state.duration)}
+          {isLoading ? '--:-- / --:--' : `${fmt(safeTime)} / ${fmt(safeDuration)}`}
         </span>
         <div style={{ flex: 1 }} />
         <CtrlBtn onClick={onToggleMute} label={state.muted ? 'Unmute' : 'Mute'}>
