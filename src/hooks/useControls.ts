@@ -14,7 +14,7 @@ const INITIAL: ControlsState = {
 }
 
 type Action =
-  | { type: 'PLAY' | 'PAUSE' | 'BUFFER' | 'CANPLAY' }
+  | { type: 'PLAY' | 'PAUSE' | 'BUFFER' | 'CANPLAY' | 'RESET' }
   | { type: 'TIME'; currentTime: number; duration: number }
   | { type: 'VOL'; volume: number; muted: boolean }
   | { type: 'FULL'; fullscreen: boolean }
@@ -29,7 +29,11 @@ function reducer(state: ControlsState, action: Action): ControlsState {
       return { ...state, buffering: true }
     case 'CANPLAY':
       return { ...state, buffering: false }
+    case 'RESET':
+      return { ...state, currentTime: 0, duration: 0 }
     case 'TIME':
+      if (!isFinite(action.duration) || action.duration <= 0) return state
+      if (!isFinite(action.currentTime)) return state
       return { ...state, currentTime: action.currentTime, duration: action.duration }
     case 'VOL':
       return { ...state, volume: action.volume, muted: action.muted }
@@ -56,11 +60,12 @@ export function useControls(player: IPlaybackControl | null): UseControlsResult 
   const [state, dispatch] = useReducer(reducer, INITIAL)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const onTime = useEffectEvent(
-    ({ currentTime, duration }: { currentTime: number; duration: number }) => {
-      dispatch({ type: 'TIME', currentTime, duration })
-    },
-  )
+const onTime = useEffectEvent(
+  ({ currentTime, duration }: { currentTime: number; duration: number }) => {
+    if (!isFinite(duration) || duration <= 0) return
+    dispatch({ type: 'TIME', currentTime, duration })
+  },
+)
 
   useEffect(() => {
     const engine = player as any
@@ -77,6 +82,9 @@ export function useControls(player: IPlaybackControl | null): UseControlsResult 
       engine.bus.on('volumechange', ({ volume, muted }: { volume: number; muted: boolean }) =>
         dispatch({ type: 'VOL', volume, muted }),
       ),
+      engine.bus.on('statechange', ({ state: s }: { state: string }) => {
+        if (s === 'loading') dispatch({ type: 'RESET' })
+      }),
     ]
 
     const onFullChange = () => dispatch({ type: 'FULL', fullscreen: !!document.fullscreenElement })

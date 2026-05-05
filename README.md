@@ -2,6 +2,8 @@
 
 A mode-agnostic React video engine with first-class VAST ad support. Build streaming players, playlists, and short-form feeds — all with preroll, midroll, and postroll advertising baked in.
 
+[![npm version](https://badge.fury.io/js/react-vast-player.svg)](https://badge.fury.io/js/react-vast-player)
+
 ## Features
 
 - **Three player modes** — Streaming, Playlist, and Feed (shorts-style)
