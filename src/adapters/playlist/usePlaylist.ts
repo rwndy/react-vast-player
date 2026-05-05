@@ -47,17 +47,22 @@ export function usePlaylist(
   const rawControls = useControls(engineRef.current)
   const [index, setIndex] = useState(0)
   const advancedRef = useRef(false)
+  const loadingRef = useRef(false)
 
   const currentItem: QueueItem | undefined = config.queue[index]
 
   useEffect(() => {
     const engine = engineRef.current
-    if (!engine || !currentItem) return
+    if (!engine || !currentItem || loadingRef.current) return
     advancedRef.current = false
+    loadingRef.current = true
     engine
       .loadContent(currentItem.src, toItemSchedule(currentItem, config.midrollVastUrls))
       .catch(console.error)
-  }, [index])
+      .finally(() => {
+        loadingRef.current = false
+      })
+  }, [index, currentItem?.id])
 
   useEffect(() => {
     if (!config.autoAdvance) return
@@ -67,14 +72,14 @@ export function usePlaylist(
     return engine.bus.on('statechange', ({ state }) => {
       if (state !== 'ended' || advancedRef.current) return
       advancedRef.current = true
-      if (index < config.queue.length - 1) setIndex(i => i + 1)
+      setTimeout(() => {
+        if (index < config.queue.length - 1) setIndex(i => i + 1)
+      }, 95)
     })
   }, [index, config.autoAdvance, config.queue.length])
 
   const onPlayEvent = useEffectEvent(() => {
     const state = engineRef.current?.state ?? 'playing'
-    console.log('player state play list=>', state)
-    console.log('config playlist => ', config)
     handlers?.onPlay?.(state, config)
   })
   const onPauseEvent = useEffectEvent(() => {
@@ -84,8 +89,6 @@ export function usePlaylist(
     handlers?.onStop?.(engineRef.current?.state ?? 'ended', config)
   })
   const onStateChangeEvent = useEffectEvent(({ state }: { state: PlayerState }) => {
-    console.log('player state play list=>', state)
-    console.log('config playlist => ', config)
     handlers?.onStateChange?.(state, config)
   })
 
@@ -121,7 +124,7 @@ export function usePlaylist(
     playerState,
     adState,
     controls,
-    containerRef: rawControls.containerRef,
+    containerRef: controls.containerRef,
     currentItem,
     currentIndex: index,
     totalItems: config.queue.length,
