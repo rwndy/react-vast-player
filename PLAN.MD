@@ -28,7 +28,7 @@
 
 These will break in real production. Not edge cases.
 
-### ☐ VAST fetch fails silently on ad blockers
+### ✅ VAST fetch fails silently on ad blockers
 
 **Problem:** When an ad blocker blocks the VAST request, the player hangs
 on the ad slot indefinitely. The user sees a black screen with no way out.
@@ -39,9 +39,9 @@ skip to content. User never knows an ad was blocked.
 **Location:** `src/ads/VastLoader.ts` + `src/core/AdOrchestrator.ts`
 
 **Acceptance criteria:**
-- [ ] Ad blocker active → content plays after 300ms fallback
-- [ ] `onAdError` callback fires with reason
-- [ ] VAST error beacon fired with code `900`
+- [x] Ad blocker active → content plays after 300ms fallback
+- [x] `onAdError` callback fires with reason
+- [x] VAST error beacon fired with code `900`
 
 ---
 
