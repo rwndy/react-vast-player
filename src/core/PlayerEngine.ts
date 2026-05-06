@@ -41,6 +41,7 @@ export class PlayerEngine implements IPlaybackControl, IAdControl {
       }),
       this.bus.on('ad:pod:ended', () => this.resumeContent()),
       this.bus.on('ad:skip', () => this.resumeContent()),
+      this.bus.on('ad:error', () => void this.resumeContent()),
       this.bus.on('ended', () => this.onContentEnded()),
     ]
   }

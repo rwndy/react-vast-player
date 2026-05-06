@@ -55,6 +55,11 @@ export function useStreamingPlayer(
     console.log('config streaming => ', config)
     handlers?.onStateChange?.(state, config)
   })
+  const onAdErrorEvent = useEffectEvent(
+    ({ reason, vastErrorCode }: { reason: string; vastErrorCode: number }) => {
+      handlers?.onAdError?.({ reason, vastErrorCode })
+    },
+  )
 
   useEffect(() => {
     const engine = engineRef.current
@@ -64,6 +69,7 @@ export function useStreamingPlayer(
       engine.bus.on('pause', onPauseEvent),
       engine.bus.on('ended', onStopEvent),
       engine.bus.on('statechange', onStateChangeEvent),
+      engine.bus.on('ad:error', onAdErrorEvent),
     ]
     return () => unsubs.forEach(u => u())
   }, [])
