@@ -138,4 +138,5 @@ export interface PlayerHandlers<TConfig = unknown> {
   onStop?: (state: PlayerState, config: TConfig) => void
   onSeek?: (time: number, state: PlayerState, config: TConfig) => void
   onStateChange?: (state: PlayerState, config: TConfig) => void
+  onAdError?: (err: { reason: string; vastErrorCode: number }) => void
 }
