@@ -1,6 +1,6 @@
 {
   "name": "react-vast-player",
-  "version": "0.1.4",
+  "version": "0.1.6",
   "description": "Mode-agnostic React video engine with first-class VAST support. No plugins.",
   "repository": {
     "type": "git",
