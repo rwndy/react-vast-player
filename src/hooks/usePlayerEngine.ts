@@ -1,5 +1,3 @@
-'use client'
-
 import { useEffect, useRef, useSyncExternalStore } from 'react'
 import { PlayerEngine } from '../core/PlayerEngine.js'
 import type { PlayerState } from '../types/index.js'
@@ -9,7 +7,7 @@ function makeStore(engine: PlayerEngine) {
   let snap: PlayerState = engine.state
   const notify = () => subs.forEach(fn => fn())
 
-  engine.bus.on('statechange', ({ state }) => {
+  const off = engine.bus.on('statechange', ({ state }) => {
     snap = state
     notify()
   })
@@ -21,6 +19,7 @@ function makeStore(engine: PlayerEngine) {
     },
     getSnapshot: () => snap,
     getServerSnapshot: (): PlayerState => 'idle',
+    destroy: off,
   }
 }
 
@@ -50,7 +49,10 @@ export function usePlayerEngine(): UsePlayerEngineResult {
     const el = videoRef.current
     if (!el) return
     engineRef.current!.attachTech(el)
-    return () => engineRef.current?.detachTech()
+    return () => {
+      engineRef.current?.detachTech()
+      storeRef.current?.destroy()
+    }
   }, [])
 
   return { videoRef, engineRef, playerState }

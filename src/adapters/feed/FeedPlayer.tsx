@@ -32,16 +32,31 @@ export function FeedPlayer({
     { onPlay, onPause, onStop, onSeek, onStateChange } as PlayerHandlers<FeedConfig>,
   )
   const dragY = useRef<number | null>(null)
+  const swiped = useRef(false)
 
-  const onPointerDown = (e: React.PointerEvent) => {
-    dragY.current = e.clientY
+  const startDrag = (y: number) => {
+    dragY.current = y
+    swiped.current = false
   }
-  const onPointerUp = (e: React.PointerEvent) => {
-    if (dragY.current === null) return
-    const delta = dragY.current - e.clientY
+
+  const endDrag = (y: number) => {
+    if (swiped.current || dragY.current === null) return
+    swiped.current = true
+    const delta = dragY.current - y
     dragY.current = null
     if (Math.abs(delta) < SWIPE_THRESHOLD) return
     delta > 0 ? swipeNext() : swipePrev()
+  }
+
+  const onPointerDown = (e: React.PointerEvent) => startDrag(e.clientY)
+  const onPointerUp = (e: React.PointerEvent) => endDrag(e.clientY)
+
+  // Touch fallback: some Android devices fire touchend but not pointerup
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (e.touches[0]) startDrag(e.touches[0].clientY)
+  }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (e.changedTouches[0]) endDrag(e.changedTouches[0].clientY)
   }
 
   return (
@@ -57,6 +72,8 @@ export function FeedPlayer({
       }}
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUp}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
     >
       <VideoSurface ref={videoRef} muted={config.muted} autoPlay={config.autoplay} />
       <BufferingSpinner visible={playerState === 'loading' || playerState === 'buffering'} />

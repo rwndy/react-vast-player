@@ -136,6 +136,22 @@ export class Tech {
       () => this.el.removeEventListener('error', onErr),
     )
 
+    // iOS Safari: video element loses loaded state when app returns from background
+    if (typeof document !== 'undefined') {
+      const onVisibility = () => {
+        if (document.visibilityState === 'visible' && this.el.src) {
+          const t = this.el.currentTime
+          this.el.load()
+          this.el.addEventListener('loadedmetadata', () => {
+            this.el.currentTime = t
+            this.el.play().catch(() => {})
+          }, { once: true })
+        }
+      }
+      document.addEventListener('visibilitychange', onVisibility)
+      offs.push(() => document.removeEventListener('visibilitychange', onVisibility))
+    }
+
     return () => offs.forEach(fn => fn())
   }
 
