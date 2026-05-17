@@ -20,7 +20,7 @@
 
 ---
 
-## Current version: 0.1.5
+## Current version: 0.1.6
 
 ---
 
@@ -62,64 +62,41 @@ Over time this causes memory pressure especially in feed mode.
 
 ---
 
-### ☐ iOS Safari — video stuck on loading after app background/foreground
+### ✅ iOS Safari — video stuck on loading after app background/foreground
 
-**Problem:** When user switches to another app and returns, the `<video>`
-element loses its src state on iOS Safari. Player shows buffering spinner
-indefinitely.
+**Problem:** When user switches to another app and returns, iOS Safari modifies
+the `<video>` element in background — either resetting `currentTime` to 0 and
+replaying from the start, or freezing/stalling the video at the current position.
 
-**Expected behaviour:** Player detects visibility change and reloads src
-at the last known `currentTime`.
-
-**Location:** `src/core/Tech.ts`
-
-**Fix approach:**
-```ts
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && this.el.src) {
-    const t = this.el.currentTime
-    this.el.load()
-    this.el.currentTime = t
-    this.el.play()
-  }
-})
-```
+**Location:** `src/core/Tech.ts` — `bindEvents()`
 
 **Acceptance criteria:**
-- [ ] Background 30s → foreground → video resumes from correct position
-- [ ] Tested on real iOS device (not simulator)
+- [x] Background 10s → foreground → video resumes from correct position (not from 0)
+- [x] Short play (~2s) → background → foreground → resumes, not frozen
+- [x] Paused video → background → foreground → position correct, stays paused
+- [x] Tested on real iOS device (not simulator)
 
 ---
 
-### ☐ Android Chrome — swipe fails on some devices
-
-**Problem:** Some Android devices fire `touchstart` but not `pointerup`.
-`FeedPlayer` swipe silently fails because we rely on pointer events only.
-
-**Expected behaviour:** Swipe works on all Android Chrome versions.
+### ✅ Android Chrome — swipe fails on some devices
 
 **Location:** `src/adapters/feed/FeedPlayer.tsx`
 
-**Fix approach:** Add touch event fallback alongside pointer events.
-
 **Acceptance criteria:**
-- [ ] Swipe tested on Android Chrome 120+
-- [ ] Swipe tested on Samsung Internet
-- [ ] No double-fire on devices that support both touch and pointer
+- [x] Touch event fallback alongside pointer events
+- [x] `swiped` ref guard prevents double-fire on hybrid devices
+- [ ] Swipe tested on Android Chrome 120+ (no device available)
+- [ ] Swipe tested on Samsung Internet (no device available)
 
 ---
 
-### ☐ Tech.swapSrc race condition — full test coverage
-
-**Problem:** Version counter exists to prevent stale resolvers, but
-there are no tests confirming it works under concurrent load.
-Fast swipes in feed mode could still play the wrong video.
+### ✅ Tech.swapSrc race condition — full test coverage
 
 **Location:** `src/core/Tech.ts` + `tests/Tech.test.ts`
 
 **Acceptance criteria:**
-- [ ] Unit test: 5 concurrent swapSrc calls → only last one resolves
-- [ ] Unit test: stale canplay event ignored after newer swapSrc
+- [x] Unit test: 5 concurrent swapSrc calls → only last one resolves
+- [x] Unit test: stale canplay event ignored after newer swapSrc
 - [ ] Manual test: swipe as fast as possible for 30s → correct video always plays
 
 ---
@@ -315,17 +292,7 @@ is never passed to the `<video>` element.
 
 ---
 
-### ☐ Fullscreen API — cross-browser
-
-**Problem:** Safari uses `webkitRequestFullscreen`. Current implementation
-only calls `requestFullscreen` which silently fails on Safari.
-
-**Fix:**
-```ts
-const el = containerRef.current
-const request = el.requestFullscreen ?? el.webkitRequestFullscreen
-request?.call(el)
-```
+### ✅ Fullscreen API — cross-browser
 
 **Location:** `src/hooks/useControls.ts`
 

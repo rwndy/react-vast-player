@@ -136,6 +136,46 @@ export class Tech {
       () => this.el.removeEventListener('error', onErr),
     )
 
+    let savedTime = 0
+    let savedWasPlaying = false
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        savedTime = this.el.currentTime
+        savedWasPlaying = !this.el.paused
+        return
+      }
+
+      if (!this.el.src || savedTime < 0.5) return
+
+      const positionReset = this.el.currentTime < savedTime - 2
+      const mediaLost = this.el.readyState < 3
+      const frozenAfterBackground = savedWasPlaying && this.el.paused
+
+      if (!positionReset && !mediaLost && !frozenAfterBackground) return
+
+      const restore = () => {
+        this.el.currentTime = savedTime
+        if (savedWasPlaying && this.el.paused) void this.el.play()
+      }
+
+      if (mediaLost) {
+        this.el.load()
+        const onReady = () => {
+          restore()
+          this.el.removeEventListener('loadedmetadata', onReady)
+        }
+        this.el.addEventListener('loadedmetadata', onReady)
+      } else {
+        restore()
+      }
+    }
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', onVisibility)
+      offs.push(() => document.removeEventListener('visibilitychange', onVisibility))
+    }
+
     return () => offs.forEach(fn => fn())
   }
 

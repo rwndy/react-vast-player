@@ -60,8 +60,6 @@ export function useFeed(config: FeedConfig, handlers?: PlayerHandlers<FeedConfig
 
   const onPlayEvent = useEffectEvent(() => {
     const state = engineRef.current?.state ?? 'playing'
-    console.log('player state feed=>', state)
-    console.log('config feed => ', config)
     handlers?.onPlay?.(state, config)
   })
   const onPauseEvent = useEffectEvent(() => {
@@ -71,8 +69,6 @@ export function useFeed(config: FeedConfig, handlers?: PlayerHandlers<FeedConfig
     handlers?.onStop?.(engineRef.current?.state ?? 'ended', config)
   })
   const onStateChangeEvent = useEffectEvent(({ state }: { state: PlayerState }) => {
-    console.log('player state feed=>', state)
-    console.log('config feed => ', config)
     handlers?.onStateChange?.(state, config)
   })
   const onAdErrorEvent = useEffectEvent(
@@ -93,6 +89,14 @@ export function useFeed(config: FeedConfig, handlers?: PlayerHandlers<FeedConfig
     ]
     return () => unsubs.forEach(u => u())
   }, [])
+
+  const syncMuted = useEffectEvent((muted: boolean) => {
+    engineRef.current?.mute(muted)
+  })
+
+  useEffect(() => {
+    if (config.muted !== undefined) syncMuted(config.muted)
+  }, [config.muted])
 
   const seek = useCallback(
     (t: number) => {

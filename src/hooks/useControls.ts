@@ -87,10 +87,30 @@ const onTime = useEffectEvent(
       }),
     ]
 
-    const onFullChange = () => dispatch({ type: 'FULL', fullscreen: !!document.fullscreenElement })
+    const onFullChange = () => {
+      const isFullscreen =
+        !!document.fullscreenElement || !!(document as any).webkitFullscreenElement
+      dispatch({ type: 'FULL', fullscreen: isFullscreen })
+    }
 
     document.addEventListener('fullscreenchange', onFullChange)
-    off.push(() => document.removeEventListener('fullscreenchange', onFullChange))
+    document.addEventListener('webkitfullscreenchange', onFullChange)
+    off.push(
+      () => document.removeEventListener('fullscreenchange', onFullChange),
+      () => document.removeEventListener('webkitfullscreenchange', onFullChange),
+    )
+
+    const video = containerRef.current?.querySelector('video')
+    if (video) {
+      const onIOSBegin = () => dispatch({ type: 'FULL', fullscreen: true })
+      const onIOSEnd = () => dispatch({ type: 'FULL', fullscreen: false })
+      video.addEventListener('webkitbeginfullscreen', onIOSBegin)
+      video.addEventListener('webkitendfullscreen', onIOSEnd)
+      off.push(
+        () => video.removeEventListener('webkitbeginfullscreen', onIOSBegin),
+        () => video.removeEventListener('webkitendfullscreen', onIOSEnd),
+      )
+    }
 
     return () => off.forEach(fn => fn())
   }, [player])
@@ -103,7 +123,26 @@ const onTime = useEffectEvent(
   const toggleFullscreen = useCallback(() => {
     const el = containerRef.current
     if (!el) return
-    document.fullscreenElement ? document.exitFullscreen() : el.requestFullscreen()
+
+    const isInFullscreen =
+      !!document.fullscreenElement || !!(document as any).webkitFullscreenElement
+
+    if (isInFullscreen) {
+      if (document.exitFullscreen) void document.exitFullscreen()
+      else if ((document as any).webkitExitFullscreen) (document as any).webkitExitFullscreen()
+      return
+    }
+
+    if (el.requestFullscreen) {
+      void el.requestFullscreen()
+    } else if ((el as any).webkitRequestFullscreen) {
+      ;(el as any).webkitRequestFullscreen()
+    } else {
+      const video = el.querySelector('video')
+      if (video && (video as any).webkitEnterFullscreen) {
+        ;(video as any).webkitEnterFullscreen()
+      }
+    }
   }, [])
 
   return { state, containerRef, play, pause, seek, setVolume, toggleMute, toggleFullscreen }
