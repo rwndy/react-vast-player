@@ -220,6 +220,18 @@ button { cursor: pointer; font: inherit; }
     0 0 80px var(--gold-glow);
 }
 
+.player-frame.feed-frame {
+  aspect-ratio: 9 / 16;
+  max-width: 340px;
+  margin: 0 auto;
+}
+
+/* Mute button: always visible on touch, hover-only on pointer devices */
+@media (hover: hover) {
+  .mute-btn { opacity: 0; transition: opacity 0.15s; }
+  .player-frame.feed-frame:hover .mute-btn { opacity: 1; }
+}
+
 /* Corner bracket accents */
 .frame-corner {
   position: absolute;
