@@ -6,6 +6,21 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.1.7] — 2026-05-17
+
+### Fixed
+- iOS Safari — video resets to beginning or freezes after returning from background. Added `visibilitychange` handler in `Tech.bindEvents` that saves `currentTime` and playing state on hide; on foreground, detects position reset, media loss (`readyState < 3`), or frozen-while-playing and restores. If media is lost, reloads and waits for `loadedmetadata` before seeking back
+- Android Chrome — swipe gesture unresponsive on devices that fire both pointer and touch events. `FeedPlayer` now registers `onTouchStart`/`onTouchEnd` alongside `onPointerDown`/`onPointerUp`; `swiped` ref prevents double-fire on hybrid devices. Changed `touchAction` to `'none'` to prevent browser scroll interference
+- `useFeed` — `config.muted` prop changes were not propagating to the engine at runtime. Added `syncMuted` effect that calls `engine.mute()` whenever `config.muted` changes
+- Fullscreen — webkit-prefixed APIs now used for cross-browser and iOS Safari compatibility: `webkitfullscreenchange` event, `webkitFullscreenElement` detection, `webkitRequestFullscreen` / `webkitEnterFullscreen` fallbacks in `toggleFullscreen`
+- `useFeed` — removed stray `console.log` calls left in `onPlayEvent` and `onStateChangeEvent`
+
+### Added
+- `FeedPlayer` — mouse wheel navigation on desktop with 800ms cooldown to prevent rapid-fire video skipping
+- Tests — `Tech.swapSrc` race conditions: 5 concurrent calls resolve only the last; stale `canplay` event after a newer `swapSrc` is discarded
+
+---
+
 ## [0.1.6] — 2026-05-07
 
 ### Fixed

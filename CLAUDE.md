@@ -222,10 +222,11 @@ dist/
 
 ## Known fragile areas
 
-- **EventBus subscriptions** — not always cleaned up in hooks. Every `bus.on()` must return its unsubscribe and be called in effect cleanup.
-- **Safari** — `loadeddata` fallback required. `swapSrc` must listen to both `canplay` and `loadeddata`. Auto-advance needs 100ms delay after `ended`.
+- **EventBus subscriptions** — ✅ Fixed in 0.1.7-dev. `statechange` subscription in `usePlayerEngine` was leaking on unmount; now cleaned up. Audit still required for `useAdManager`, `useControls`, `usePlaylist`, `useFeed`.
+- **Safari** — `loadeddata` fallback required. `swapSrc` must listen to both `canplay` and `loadeddata`. Auto-advance needs 100ms delay after `ended`. iOS reload-after-background: ✅ Fixed — waits for `loadedmetadata` before seeking to `currentTime`.
 - **Chrome** — `timeupdate` fires before `loadedmetadata` for large files. Guard against `NaN` duration in `Tech.onTime` at the source.
-- **Ad blockers** — VAST fetch fails silently. No graceful fallback yet — tracked in PLAN.md.
+- **Android Chrome** — ✅ Fixed in 0.1.7-dev. `FeedPlayer` now falls back to touch events alongside pointer events. Double-fire guard (`swiped` ref) prevents concurrent fires on hybrid devices.
+- **Ad blockers** — ✅ Fixed in 0.1.6. VAST fetch failure emits `ad:error` with code `900` and auto-resumes content within 300ms. `onAdError` callback fires. User never sees a black screen.
 - **exactOptionalPropertyTypes** — optional props must never receive `T | undefined` directly. Use imperative builders or `?? default`.
 
 ---
@@ -289,5 +290,5 @@ Never push directly to `main` — branch protection is enforced.
 
 ---
 
-## Current version: 0.1.5
+## Current version: 0.1.6
 ## Roadmap: PLAN.md
