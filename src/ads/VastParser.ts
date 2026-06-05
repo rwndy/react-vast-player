@@ -1,3 +1,4 @@
+import { VastError } from './VastError.js'
 import type { VastAd, VastMediaFile, VastTracking, VastTrackingEvent } from '../types/index.js'
 
 const TRACKING_EVENTS = new Set<VastTrackingEvent>([
@@ -84,10 +85,18 @@ function parseAd(adEl: Element): VastAd | null {
 
 export function parseVast(xml: string): VastAd[] {
   const doc = new DOMParser().parseFromString(xml, 'text/xml')
-  return Array.from(doc.querySelectorAll('Ad')).flatMap(el => {
+  const adEls = Array.from(doc.querySelectorAll('Ad'))
+  const ads = adEls.flatMap(el => {
     const ad = parseAd(el)
     return ad ? [ad] : []
   })
+  // If <Ad> elements were present but none yielded usable media,
+  // surface as 401 (File/MediaFile not found from URI). Empty XML
+  // (no <Ad> elements at all) is left for the caller to handle.
+  if (adEls.length > 0 && ads.every(a => a.mediaFiles.length === 0)) {
+    throw new VastError(401, 'VAST: no usable MediaFile in parsed ads')
+  }
+  return ads
 }
 
 export function getWrapperUrl(xml: string): string | null {
