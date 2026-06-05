@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { Tech } from '../src/core/Tech'
 
-function makeMockVideoEl(): HTMLVideoElement {
+function makeMockVideoEl(opts?: { nativeHls?: boolean }): HTMLVideoElement {
   const target = new EventTarget()
   return Object.assign(target, {
     src: '',
@@ -16,6 +16,7 @@ function makeMockVideoEl(): HTMLVideoElement {
     play: vi.fn().mockResolvedValue(undefined),
     load: vi.fn(),
     removeAttribute: vi.fn(),
+    canPlayType: vi.fn().mockReturnValue(opts?.nativeHls ? 'maybe' : ''),
   }) as unknown as HTMLVideoElement
 }
 
@@ -81,5 +82,14 @@ describe('Tech.swapSrc', () => {
 
     expect(resolved).toEqual(['b'])
     expect(resolved).not.toContain('a')
+  })
+
+  it('.m3u8 with native HLS support uses native path (Safari)', async () => {
+    const el = makeMockVideoEl({ nativeHls: true })
+    const tech = new Tech(el)
+    const p = tech.swapSrc('https://cdn.example.com/stream.m3u8')
+    fire(el, 'canplay')
+    await expect(p).resolves.toBeUndefined()
+    expect((el as unknown as { src: string }).src).toBe('https://cdn.example.com/stream.m3u8')
   })
 })
