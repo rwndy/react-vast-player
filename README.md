@@ -7,7 +7,10 @@ A mode-agnostic React video engine with first-class VAST ad support. Build strea
 ## Features
 
 - **Three player modes** — Streaming, Playlist, and Feed (shorts-style)
-- **Full VAST 2–4 support** — preroll, midroll, postroll, skippable ads, quartile tracking
+- **Full VAST 2–4 support** — preroll, midroll, postroll, skippable ads, quartile tracking, discriminated error codes (301/303/401/402/403/900)
+- **VMAP schedules** — single URL → preroll + midrolls + postroll, mutually exclusive with the individual `*VastUrl` props
+- **HLS streams** — auto-detected `.m3u8` URLs play via native HLS on Safari and via optional `hls.js` on Chrome / Firefox / Edge
+- **`onAdError` callback + graceful fallback** — any VAST failure auto-resumes content within 500 ms; the consumer is notified via `onAdError({ reason, vastErrorCode })`
 - **Three levels of abstraction** — drop-in components, headless hooks, or raw core primitives
 - **TypeScript-first** — strict types throughout with full type exports
 - **React 19+** compatible
@@ -24,6 +27,16 @@ pnpm add react-vast-player
 ```
 
 **Requirements:** React >= 19.0.0
+
+**Optional peer dependencies**
+
+```bash
+# Only required if you serve HLS (.m3u8) content. MP4 works out of the box.
+npm install hls.js
+```
+
+If `hls.js` is missing when an `.m3u8` URL is played, the player throws
+`react-vast-player: HLS playback requires hls.js. Install it: \`npm i hls.js\``.
 
 ---
 
@@ -48,10 +61,27 @@ export function MyPlayer() {
       muted
       style={{ width: '100%', height: 600 }}
       onPlay={(state, config) => console.log('playing', state)}
+      onAdError={({ reason, vastErrorCode }) =>
+        console.warn('ad failed:', vastErrorCode, reason)
+      }
     />
   )
 }
 ```
+
+#### With VMAP (single schedule URL)
+
+```tsx
+<StreamingPlayer
+  src="https://cdn.example.com/episode.m3u8"
+  vmapUrl="https://ads.example.com/vmap.xml"
+  onAdError={({ vastErrorCode, reason }) => track('ad_error', { vastErrorCode, reason })}
+/>
+```
+
+When `vmapUrl` is set, the individual `prerollVastUrl` / `midrollVastUrls` /
+`postrollVastUrl` props are ignored. VMAP fetch failure auto-resumes
+content-only playback.
 
 ### Playlist Player
 
@@ -153,6 +183,7 @@ import { PlaylistPlayer, usePlaylist } from 'react-vast-player/playlist'
 | `prerollVastUrl` | `string` | — | VAST URL to play before content |
 | `midrollVastUrls` | `{ time: number; url: string }[]` | — | VAST URLs at specific timestamps (seconds) |
 | `postrollVastUrl` | `string` | — | VAST URL to play after content ends |
+| `vmapUrl` | `string` | — | VMAP schedule URL. Overrides the three `*VastUrl` props above when set |
 | `autoplay` | `boolean` | `false` | Autoplay on mount |
 | `muted` | `boolean` | `false` | Start muted |
 | `loop` | `boolean` | `false` | Loop content |
@@ -164,6 +195,7 @@ import { PlaylistPlayer, usePlaylist } from 'react-vast-player/playlist'
 | `onStop` | `(state, config) => void` | — | Fires when playback stops |
 | `onSeek` | `(time, state, config) => void` | — | Fires on seek |
 | `onStateChange` | `(state, config) => void` | — | Fires on any state transition |
+| `onAdError` | `({ reason, vastErrorCode }) => void` | — | Fires on any VAST/VMAP failure. Content auto-resumes within 500 ms |
 
 ### `<PlaylistPlayer>`
 
@@ -174,6 +206,7 @@ import { PlaylistPlayer, usePlaylist } from 'react-vast-player/playlist'
 | `autoplay` | `boolean` | `false` | Autoplay on mount |
 | `muted` | `boolean` | `false` | Start muted |
 | `midrollVastUrls` | `{ time: number; url: string }[]` | — | Midrolls applied to every item |
+| `vmapUrl` | `string` | — | VMAP schedule applied to every item. Overrides per-item `prerollVastUrl` and queue-level `midrollVastUrls` when set |
 | `className` | `string` | — | |
 | `style` | `CSSProperties` | — | |
 | `renderItem` | `(item, index, total) => ReactNode` | — | Custom overlay per item |
@@ -462,6 +495,21 @@ engine.bus.on('ad:click', ({ url }) => {})
 engine.bus.on('ad:error', ({ reason, vastErrorCode }) => {})
 engine.bus.on('error', ({ code, message, fatal }) => {})
 ```
+
+### VAST error codes
+
+`ad:error.vastErrorCode` follows the IAB VAST spec. The same code is
+substituted into the `[ERRORCODE]` macro of any `<Error>` URL declared
+in the VAST document.
+
+| Code | Meaning | When it fires |
+|------|---------|---------------|
+| `301` | Wrapper timeout / fetch failure | A VAST wrapper inside the chain failed to load |
+| `303` | Wrapper depth exceeded | Wrapper chain deeper than 5 levels |
+| `401` | MediaFile URI not found | Parsed VAST has `<Ad>` elements but no usable `<MediaFile>` |
+| `402` | MediaFile load failure | `tech.swapSrc` rejected (network / decode error) |
+| `403` | Unsupported codec | No supported `<MediaFile>` candidate in the linear ad |
+| `900` | Generic / undefined | Anything else — root-document fetch failure, empty VAST, non-`VastError` throw, VMAP parse failure |
 
 ---
 

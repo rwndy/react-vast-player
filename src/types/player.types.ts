@@ -69,6 +69,11 @@ export interface StreamingConfig {
   prerollVastUrl?: string
   midrollVastUrls?: { time: number; url: string }[]
   postrollVastUrl?: string
+  /**
+   * VMAP schedule URL. When set, the individual `prerollVastUrl` /
+   * `midrollVastUrls` / `postrollVastUrl` fields are ignored.
+   */
+  vmapUrl?: string
   autoplay?: boolean
   muted?: boolean
   loop?: boolean
@@ -89,6 +94,11 @@ export type FeedSlot =
 export interface FeedConfig {
   items: ContentItem[]
   vastUrls?: string[]
+  /**
+   * Optional VMAP schedule URL. Not yet wired into the feed scheduler
+   * (feeds use interval-based pacing). Reserved for a future release.
+   */
+  vmapUrl?: string
   adInterval?: number
   autoplay?: boolean
   muted?: boolean
@@ -104,6 +114,12 @@ export interface PlaylistConfig {
   autoplay?: boolean
   muted?: boolean
   midrollVastUrls?: { time: number; url: string }[]
+  /**
+   * VMAP schedule URL applied to every item in the queue. When set,
+   * the per-item `prerollVastUrl` and the queue-level `midrollVastUrls`
+   * are ignored.
+   */
+  vmapUrl?: string
 }
 
 // ISP: focused interfaces — hooks depend only on the slice they need

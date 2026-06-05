@@ -227,6 +227,8 @@ dist/
 - **Chrome** — `timeupdate` fires before `loadedmetadata` for large files. Guard against `NaN` duration in `Tech.onTime` at the source.
 - **Android Chrome** — ✅ Fixed in 0.1.7-dev. `FeedPlayer` now falls back to touch events alongside pointer events. Double-fire guard (`swiped` ref) prevents concurrent fires on hybrid devices.
 - **Ad blockers** — ✅ Fixed in 0.1.6. VAST fetch failure emits `ad:error` with code `900` and auto-resumes content within 300ms. `onAdError` callback fires. User never sees a black screen.
+- **VAST error codes** — ✅ 0.2.0. `ad:error.vastErrorCode` is now discriminated (301 wrapper timeout / 303 wrapper depth / 401 missing MediaFile / 402 media URI error / 403 unsupported codec / 900 generic). Throw `VastError(code, msg)` from `ads/` files so `AdOrchestrator` propagates the code through the bus payload.
+- **HLS via hls.js** — ✅ 0.2.0. `hls.js` is an **optional** peer dep. `Tech.swapSrc` auto-detects `.m3u8`; Safari uses native HLS, other browsers dynamically `import('hls.js')` and surface a clear install message if it's missing. Always run `tech.detachMedia()` (auto-called by `PlayerEngine.detachTech`) so the hls.js instance is destroyed.
 - **exactOptionalPropertyTypes** — optional props must never receive `T | undefined` directly. Use imperative builders or `?? default`.
 
 ---
@@ -271,8 +273,7 @@ const safeTime = isFinite(state.currentTime) && state.currentTime >= 0
 ```
 VPAID          — tracked in PLAN.md as post v1.0.0
 OMID           — tracked in PLAN.md as post v1.0.0
-HLS            — tracked in PLAN.md as v0.2.0
-VMAP           — tracked in PLAN.md as v0.2.0
+DASH           — tracked in PLAN.md as post v1.0.0
 loop feature   — not yet scoped
 Any new adapter, hook, or component not in the current file tree
 ```
@@ -290,5 +291,5 @@ Never push directly to `main` — branch protection is enforced.
 
 ---
 
-## Current version: 0.1.6
+## Current version: 0.2.0
 ## Roadmap: PLAN.md

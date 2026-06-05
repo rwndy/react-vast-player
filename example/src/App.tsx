@@ -202,7 +202,7 @@ export default function App() {
                         {tab === 'streaming' && (
                             <StreamingPlayer
                                 key='streaming'
-                                src='https://www.w3schools.com/html/movie.mp4'
+                                src='https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8'
                                 prerollVastUrl={VAST}
                                 muted
                                 autoplay

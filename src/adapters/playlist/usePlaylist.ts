@@ -2,6 +2,8 @@ import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react'
 import { usePlayerEngine } from '../../hooks/usePlayerEngine'
 import { useAdManager } from '../../hooks/useAdManager'
 import { useControls, type UseControlsResult } from '../../hooks/useControls'
+import { loadVmap } from '../../ads/VmapLoader'
+import { VastError } from '../../ads/VastError'
 import type { AdScheduleConfig } from '../../ads/AdScheduler'
 import type {
   AdState,
@@ -56,13 +58,23 @@ export function usePlaylist(
     if (!engine || !currentItem || loadingRef.current) return
     advancedRef.current = false
     loadingRef.current = true
-    engine
-      .loadContent(currentItem.src, toItemSchedule(currentItem, config.midrollVastUrls))
+    const scheduleP: Promise<AdScheduleConfig | undefined> = config.vmapUrl
+      ? loadVmap(config.vmapUrl).catch((err: unknown) => {
+          const code = err instanceof VastError ? err.code : 900
+          engine.bus.emit('ad:error', {
+            reason: (err as Error).message,
+            vastErrorCode: code,
+          })
+          return undefined
+        })
+      : Promise.resolve(toItemSchedule(currentItem, config.midrollVastUrls))
+    scheduleP
+      .then(schedule => engine.loadContent(currentItem.src, schedule))
       .catch(console.error)
       .finally(() => {
         loadingRef.current = false
       })
-  }, [index, currentItem?.id])
+  }, [index, currentItem?.id, config.vmapUrl])
 
   useEffect(() => {
     if (!config.autoAdvance) return

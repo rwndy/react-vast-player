@@ -1,3 +1,4 @@
+import { attachHls, canPlayNativeHls, isHlsUrl, type HlsHandle } from './HlsAdapter.js'
 import type { EventBus } from './EventBus.js'
 
 const PASSTHROUGH = [
@@ -12,17 +13,30 @@ const SWAP_TIMEOUT_MS = 5_000
 
 export class Tech {
   private srcVersion = 0
+  private hls: HlsHandle | null = null
 
   constructor(private readonly el: HTMLVideoElement) {}
 
-  swapSrc(url: string): Promise<void> {
+  async swapSrc(url: string): Promise<void> {
     const version = ++this.srcVersion
 
     this.el.pause()
+    this.hls?.destroy()
+    this.hls = null
 
-    this.el.removeAttribute('src')
-    this.el.src = url
-    this.el.load()
+    const useHlsJs = isHlsUrl(url) && !canPlayNativeHls(this.el)
+    if (useHlsJs) {
+      this.hls = await attachHls(this.el, url)
+      if (version !== this.srcVersion) {
+        this.hls.destroy()
+        this.hls = null
+        return
+      }
+    } else {
+      this.el.removeAttribute('src')
+      this.el.src = url
+      this.el.load()
+    }
 
     return new Promise((resolve, reject) => {
       let settled = false
@@ -53,6 +67,11 @@ export class Tech {
         settle(resolve)
       }, SWAP_TIMEOUT_MS)
     })
+  }
+
+  detachMedia(): void {
+    this.hls?.destroy()
+    this.hls = null
   }
 
   play(): Promise<void> {

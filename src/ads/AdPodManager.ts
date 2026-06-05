@@ -1,5 +1,6 @@
 import { fireBeacon, fireBeacons, fireError } from './BeaconFirer.js'
 import { bestMediaFile } from './VastLoader.js'
+import { VastError } from './VastError.js'
 import type { EventBus } from '../core/EventBus.js'
 import type { Tech } from '../core/Tech.js'
 import type { VastAd, VastTrackingEvent, AdQuartile } from '../types/index.js'
@@ -48,8 +49,14 @@ export class AdPodManager {
     this.currentAd = ad
     this.quartilesFired.clear()
 
-    await this.tech.swapSrc(file.url)
-    await this.tech.play()
+    try {
+      await this.tech.swapSrc(file.url)
+      await this.tech.play()
+    } catch (err) {
+      // MediaFile fetch/decoding failed — IAB code 402 (MediaFile URI timeout/error)
+      fireError(ad.errorUrls, 402)
+      throw new VastError(402, `Ad MediaFile failed: ${(err as Error).message}`)
+    }
 
     fireBeacons(ad.impressionUrls)
     this.trackEvent('start')
