@@ -6,6 +6,25 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [0.2.0] — 2026-06-05
+
+### Added
+- **HLS support via `hls.js`** — `Tech.swapSrc` now auto-detects `.m3u8` URLs and routes them through a new `HlsAdapter`. Safari uses native HLS (`canPlayType('application/vnd.apple.mpegurl')`); other browsers dynamically `import('hls.js')`. `hls.js` is declared as an **optional** peer dependency (`peerDependenciesMeta.hls.js.optional = true`); a clear install message is thrown if it's missing. Ad creatives continue to use the native path (always MP4).
+- **VMAP parser + loader** — new `src/ads/VmapParser.ts` and `src/ads/VmapLoader.ts`. Pass `vmapUrl` on `StreamingConfig` or `PlaylistConfig` to load a VMAP schedule that resolves to preroll / midrolls / postroll. Supports `start` / `end` / `HH:MM:SS(.mmm)` / numeric-seconds `timeOffset` values. Inline `<vmap:VASTAdData>` and percentage offsets are tracked for a later release.
+- **Discriminated VAST error codes** — new `src/ads/VastError.ts` exposes IAB-spec codes 301 (wrapper timeout), 303 (wrapper depth), 401 (MediaFile missing), 402 (MediaFile load failure), 403 (unsupported codec), 900 (generic). `ad:error.vastErrorCode` is now populated correctly instead of always being `900`. `BeaconFirer.fireError` substitutes the `[ERRORCODE]` macro into VAST `<Error>` URLs.
+
+### Changed
+- `AdOrchestrator.run` propagates `VastError.code` into the `ad:error` payload — falls back to `900` only when a non-`VastError` is caught.
+- `AdPodManager.playSingle` now wraps `tech.swapSrc` / `tech.play` and fires VAST error beacons with code `402` on MediaFile load failure.
+- `useStreamingPlayer` and `usePlaylist` resolve `vmapUrl` before calling `engine.loadContent`. VMAP fetch / parse failure emits `ad:error` and falls back to content-only playback.
+- `Tech` exposes `detachMedia()` and `PlayerEngine.detachTech` calls it, so the active `hls.js` instance is destroyed on engine teardown.
+
+### Tests
+- New test files: `tests/vastErrorCodes.test.ts`, `tests/vmapParser.test.ts`, `tests/vmapLoader.test.ts`, `tests/hlsAdapter.test.ts`. `tests/playerEngine.adError.test.ts` extended with a 500ms-resume guarantee and a state-transition assertion. `tests/Tech.test.ts` extended with an `.m3u8` + native-HLS-routing case.
+- Added `jsdom` (devDep) so the XML parser tests have a real `DOMParser`.
+
+---
+
 ## [0.1.7] — 2026-05-17
 
 ### Fixed

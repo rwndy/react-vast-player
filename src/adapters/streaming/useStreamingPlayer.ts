@@ -2,6 +2,8 @@ import { useCallback, useEffect, useEffectEvent } from 'react'
 import { usePlayerEngine } from '../../hooks/usePlayerEngine'
 import { useAdManager } from '../../hooks/useAdManager'
 import { useControls, type UseControlsResult } from '../../hooks/useControls'
+import { loadVmap } from '../../ads/VmapLoader'
+import { VastError } from '../../ads/VastError'
 import type { AdScheduleConfig } from '../../ads/AdScheduler'
 import type { AdState, PlayerState, StreamingConfig, PlayerHandlers } from '../../types/index'
 import type { PlayerEngine } from '../../core/PlayerEngine'
@@ -24,6 +26,11 @@ function toScheduleConfig(c: StreamingConfig): AdScheduleConfig | undefined {
   return Object.keys(cfg).length ? cfg : undefined
 }
 
+async function resolveSchedule(c: StreamingConfig): Promise<AdScheduleConfig | undefined> {
+  if (c.vmapUrl) return loadVmap(c.vmapUrl)
+  return toScheduleConfig(c)
+}
+
 export function useStreamingPlayer(
   config: StreamingConfig,
   handlers?: PlayerHandlers<StreamingConfig>,
@@ -35,8 +42,25 @@ export function useStreamingPlayer(
   useEffect(() => {
     const engine = engineRef.current
     if (!engine || !config.src) return
-    engine.loadContent(config.src, toScheduleConfig(config)).catch(console.error)
-  }, [config.src])
+    let cancelled = false
+    resolveSchedule(config)
+      .then(schedule => {
+        if (cancelled) return
+        return engine.loadContent(config.src, schedule)
+      })
+      .catch((err: unknown) => {
+        // VMAP fetch / parse failure: surface as ad:error and play content-only
+        const code = err instanceof VastError ? err.code : 900
+        engine.bus.emit('ad:error', {
+          reason: (err as Error).message,
+          vastErrorCode: code,
+        })
+        if (!cancelled) engine.loadContent(config.src).catch(() => {})
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [config.src, config.vmapUrl])
 
   const onPlayEvent = useEffectEvent(() => {
     const state = engineRef.current?.state ?? 'playing'

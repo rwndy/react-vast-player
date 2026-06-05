@@ -49,6 +49,7 @@ export class PlayerEngine implements IPlaybackControl, IAdControl {
   // Tears down only the tech layer — preserves bus subscriptions (e.g. makeStore's statechange listener)
   detachTech(): void {
     this.unbind?.()
+    this.tech?.detachMedia()
     this.techUnsubs.forEach(u => u())
     this.techUnsubs = []
     this.unbind = null

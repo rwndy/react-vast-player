@@ -20,7 +20,7 @@
 
 ---
 
-## Current version: 0.1.6
+## Current version: 0.2.0
 
 ---
 
@@ -45,20 +45,24 @@ skip to content. User never knows an ad was blocked.
 
 ---
 
-### ☐ Memory leak — EventBus subscriptions not cleaned up
+### ✅ Memory leak — EventBus subscriptions cleaned up
 
-**Problem:** `bus.on()` calls inside `useEffect` don't always clean up when
-a component unmounts mid-load (e.g. user navigates away during preroll fetch).
-Over time this causes memory pressure especially in feed mode.
+**Problem:** `bus.on()` calls inside `useEffect` didn't always clean up when
+a component unmounted mid-load (e.g. user navigates away during preroll fetch).
+Over time this caused memory pressure especially in feed mode.
 
-**Expected behaviour:** Every `bus.on()` unsubscribes on cleanup.
+**Fix:** every `bus.on()` inside the hooks now collects its unsubscribe
+function and invokes it in the `useEffect` cleanup; `PlayerEngine`,
+`MidrollWatcher`, and `AdPodManager` expose explicit `detach()` /
+`clearListeners()` lifecycles that the engine triggers.
 
-**Location:** Audit all hooks — `useAdManager`, `useControls`, `usePlaylist`,
-`useFeed`, `useStreamingPlayer`
+**Location:** `useAdManager`, `useControls`, `usePlaylist`, `useFeed`,
+`useStreamingPlayer`, `PlayerEngine.detachTech`, `MidrollWatcher.detach`,
+`AdPodManager.clearListeners`.
 
 **Acceptance criteria:**
-- [ ] Every `bus.on()` call has a corresponding cleanup
-- [ ] No memory growth after 50 feed swipes in Chrome DevTools Memory tab
+- [x] Every `bus.on()` call has a corresponding cleanup
+- [ ] No memory growth after 50 feed swipes in Chrome DevTools Memory tab *(manual test — still open)*
 
 ---
 
@@ -103,7 +107,7 @@ replaying from the start, or freezing/stalling the video at the current position
 
 ## 🟠 High — Required for production use
 
-### ☐ HLS support via hls.js
+### ✅ HLS support via hls.js
 
 **Problem:** Most production streaming content is HLS (`.m3u8`).
 The library only supports mp4 which is rarely used in production.
@@ -126,14 +130,14 @@ npm install react-vast-player hls.js
 **Location:** `src/core/Tech.ts` — new `swapHlsSrc()` method
 
 **Acceptance criteria:**
-- [ ] HLS streams play in Chrome, Firefox, Edge
-- [ ] Safari uses native HLS
-- [ ] VAST ads play correctly over HLS content
-- [ ] Clear error if hls.js peer dep not installed
+- [x] HLS streams play in Chrome, Firefox, Edge (via dynamic `import('hls.js')`)
+- [x] Safari uses native HLS (`canPlayType('application/vnd.apple.mpegurl')`)
+- [x] VAST ads play correctly over HLS content (ad creatives stay MP4)
+- [x] Clear error if hls.js peer dep not installed (`react-vast-player: HLS playback requires hls.js…`)
 
 ---
 
-### ☐ VMAP parser
+### ✅ VMAP parser
 
 **Problem:** Real ad servers return VMAP — a single URL containing the full
 ad schedule (preroll, midrolls, postroll). Nobody sends individual VAST URLs
@@ -155,14 +159,18 @@ in production. This is the #1 missing feature for real ad ops integration.
 **Location:** `src/ads/`
 
 **Acceptance criteria:**
-- [ ] VMAP preroll, midroll, postroll all fire correctly
-- [ ] Wrapper VAST inside VMAP resolves correctly
-- [ ] Falls back gracefully if VMAP fetch fails
-- [ ] Unit tests for all ad break types
+- [x] VMAP preroll, midroll, postroll all fire correctly (start/end/HH:MM:SS offsets)
+- [x] Wrapper VAST inside VMAP resolves correctly (reuses `loadVast` at playback time)
+- [x] Falls back gracefully if VMAP fetch fails (emits `ad:error` and plays content-only)
+- [x] Unit tests for all ad break types (`tests/vmapParser.test.ts`, `tests/vmapLoader.test.ts`)
+
+**Not yet supported** (tracked for a later release):
+- Inline `<vmap:VASTAdData>` (only `<vmap:AdTagURI>` references)
+- Percentage time offsets (`50%` requires content duration)
 
 ---
 
-### ☐ onAdError callback + graceful content fallback
+### ✅ onAdError callback + graceful content fallback
 
 **Problem:** If VAST fails for any reason (network, empty response, parse error,
 ad blocker), the library throws and leaves the user on a black screen.
@@ -178,13 +186,13 @@ ad blocker), the library throws and leaves the user on a black screen.
 ```
 
 **Acceptance criteria:**
-- [ ] Any VAST failure → content plays within 500ms
-- [ ] `onAdError` callback fires with error details
-- [ ] No visible interruption to the user
+- [x] Any VAST failure → content plays within 500ms (`tests/playerEngine.adError.test.ts`)
+- [x] `onAdError` callback fires with error details (`{ reason, vastErrorCode }`)
+- [x] No visible interruption to the user (PlayerEngine auto-resumes on `ad:error`)
 
 ---
 
-### ☐ VAST error codes — proper beacon firing
+### ✅ VAST error codes — proper beacon firing
 
 **Problem:** Library throws generic errors. VAST spec defines numeric error
 codes that must be sent to the `<Error>` URL so ad servers know what failed.
@@ -202,9 +210,9 @@ codes that must be sent to the `<Error>` URL so ad servers know what failed.
 **Location:** `src/ads/BeaconFirer.ts` + `src/ads/VastLoader.ts` + `src/ads/AdPodManager.ts`
 
 **Acceptance criteria:**
-- [ ] Each error path fires the correct code
-- [ ] `[ERRORCODE]` macro replaced in Error URL before firing
-- [ ] Unit tests for each error code path
+- [x] Each error path fires the correct code (`src/ads/VastError.ts` + throw sites in VastLoader/VastParser/AdPodManager)
+- [x] `[ERRORCODE]` macro replaced in Error URL before firing (`BeaconFirer.fireError`)
+- [x] Unit tests for each error code path (`tests/vastErrorCodes.test.ts`)
 
 ---
 
