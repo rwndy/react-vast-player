@@ -1,7 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useReducer, useRef, useEffectEvent } from 'react'
-import type { IPlaybackControl, ControlsState } from '../types/index.js'
+import type { ControlsState } from '../types/index.js'
+import type { PlayerEngine } from '../core/PlayerEngine.js'
 
 const INITIAL: ControlsState = {
   playing: false,
@@ -60,8 +61,8 @@ export interface UseControlsResult {
   setPlaybackRate: (rate: number) => void
 }
 
-// ISP: depends on IPlaybackControl only, not the full PlayerEngine
-export function useControls(player: IPlaybackControl | null): UseControlsResult {
+/** @experimental Low-level controls hook — prefer useStreamingPlayer/useFeed/usePlaylist. */
+export function useControls(player: PlayerEngine | null): UseControlsResult {
   const [state, dispatch] = useReducer(reducer, INITIAL)
   const containerRef = useRef<HTMLDivElement>(null)
   const userRateRef = useRef(1)
@@ -75,27 +76,26 @@ const onTime = useEffectEvent(
 )
 
   useEffect(() => {
-    const engine = player as any
-    if (!engine?.bus) return
+    if (!player?.bus) return
 
     const stored = localStorage.getItem('rvp:volume')
     if (stored !== null) {
       const v = parseFloat(stored)
-      if (isFinite(v) && v >= 0 && v <= 1) player?.volume(v)
+      if (isFinite(v) && v >= 0 && v <= 1) player.volume(v)
     }
 
-    dispatch({ type: 'VOL', volume: engine.tech?.volume ?? 1, muted: engine.muted ?? false })
+    dispatch({ type: 'VOL', volume: player.currentVolume, muted: player.muted })
 
     const off = [
-      engine.bus.on('play', () => dispatch({ type: 'PLAY' })),
-      engine.bus.on('pause', () => dispatch({ type: 'PAUSE' })),
-      engine.bus.on('buffering', () => dispatch({ type: 'BUFFER' })),
-      engine.bus.on('canplay', () => dispatch({ type: 'CANPLAY' })),
-      engine.bus.on('timeupdate', onTime),
-      engine.bus.on('volumechange', ({ volume, muted }: { volume: number; muted: boolean }) =>
+      player.bus.on('play', () => dispatch({ type: 'PLAY' })),
+      player.bus.on('pause', () => dispatch({ type: 'PAUSE' })),
+      player.bus.on('buffering', () => dispatch({ type: 'BUFFER' })),
+      player.bus.on('canplay', () => dispatch({ type: 'CANPLAY' })),
+      player.bus.on('timeupdate', onTime),
+      player.bus.on('volumechange', ({ volume, muted }: { volume: number; muted: boolean }) =>
         dispatch({ type: 'VOL', volume, muted }),
       ),
-      engine.bus.on('statechange', ({ state: s }: { state: string }) => {
+      player.bus.on('statechange', ({ state: s }: { state: string }) => {
         if (s === 'loading') dispatch({ type: 'RESET' })
         if (s === 'ad' && !adActiveRef.current) {
           adActiveRef.current = true
@@ -111,7 +111,7 @@ const onTime = useEffectEvent(
 
     const onFullChange = () => {
       const isFullscreen =
-        !!document.fullscreenElement || !!(document as any).webkitFullscreenElement
+        !!document.fullscreenElement || !!document.webkitFullscreenElement
       dispatch({ type: 'FULL', fullscreen: isFullscreen })
     }
 
@@ -155,23 +155,21 @@ const onTime = useEffectEvent(
     if (!el) return
 
     const isInFullscreen =
-      !!document.fullscreenElement || !!(document as any).webkitFullscreenElement
+      !!document.fullscreenElement || !!document.webkitFullscreenElement
 
     if (isInFullscreen) {
       if (document.exitFullscreen) void document.exitFullscreen()
-      else if ((document as any).webkitExitFullscreen) (document as any).webkitExitFullscreen()
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen()
       return
     }
 
     if (el.requestFullscreen) {
       void el.requestFullscreen()
-    } else if ((el as any).webkitRequestFullscreen) {
-      ;(el as any).webkitRequestFullscreen()
+    } else if (el.webkitRequestFullscreen) {
+      el.webkitRequestFullscreen()
     } else {
       const video = el.querySelector('video')
-      if (video && (video as any).webkitEnterFullscreen) {
-        ;(video as any).webkitEnterFullscreen()
-      }
+      if (video?.webkitEnterFullscreen) video.webkitEnterFullscreen()
     }
   }, [])
 

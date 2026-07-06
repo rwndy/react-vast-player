@@ -123,6 +123,9 @@ export class PlayerEngine implements IPlaybackControl, IAdControl {
   get muted(): boolean {
     return this.tech?.muted ?? false
   }
+  get currentVolume(): number {
+    return this.tech?.volume ?? 1
+  }
   get playbackRate(): number {
     return this.tech?.playbackRate ?? 1
   }
