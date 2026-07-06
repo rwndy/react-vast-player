@@ -20,3 +20,6 @@ npm-debug.log*
 .vscode
 .github
 .claude
+
+# Test coverage output
+coverage/
