@@ -113,6 +113,7 @@ Used internally by drop-in components. Also importable for custom UIs.
 | Controls state + keyboard shortcuts | hooks | useControls.ts |
 | Controls auto-hide (idle detection) | hooks | useControlsVisibility.ts |
 | Picture-in-Picture | hooks | usePip.ts |
+| Webkit cross-browser type shims | types | webkit.d.ts |
 
 ---
 
@@ -235,6 +236,8 @@ dist/
 - **exactOptionalPropertyTypes** — optional props must never receive `T | undefined` directly. Use imperative builders or `?? default`.
 - **Ad click-through** — ✅ 0.3.0. Only the AD badge is clickable (not the entire video). Pause-on-click was removed: `blur`/`focus`/`visibilitychange` events are unreliable across Chrome/Safari for this use case, and Safari blocks `video.play()` from non-gesture handlers. Ad keeps playing while user is on advertiser's page.
 - **Controls auto-hide** — ✅ 0.3.0. `useControlsVisibility` hook manages idle timer (3s). Uses `useEffectEvent` to always read the latest `playing` state inside event listeners registered with `[]` deps.
+- **`as any` eliminated** — ✅ 0.4.0. `player as any` in `useControls` replaced by typing to `PlayerEngine | null`. Webkit casts replaced by global augmentations in `src/types/webkit.d.ts`.
+- **Test coverage** — ✅ 0.4.0. 84.39% lines / 87.25% functions on `src/core/**` and `src/ads/**`. Run `npm run test:coverage`. Thresholds enforced in `vitest.config.ts` via `@vitest/coverage-v8`.
 
 ---
 
@@ -296,5 +299,5 @@ Never push directly to `main` — branch protection is enforced.
 
 ---
 
-## Current version: 0.3.0 (feature/v0.3.0 branch)
+## Current version: 0.4.0 (feature/v0.4.0 branch)
 ## Roadmap: PLAN.md

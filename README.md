@@ -149,6 +149,59 @@ export function MyFeed() {
 
 ---
 
+## Controls & UX
+
+All player modes with a control bar (`StreamingPlayer`, `PlaylistPlayer`) ship these UX features out of the box.
+
+### Keyboard shortcuts
+
+Click (or tab to) the player to focus it, then:
+
+| Key | Action |
+|-----|--------|
+| `Space` | Play / Pause |
+| `←` | Seek back 5 s |
+| `→` | Seek forward 5 s |
+| `M` | Toggle mute |
+| `F` | Toggle fullscreen |
+
+Shortcuts are disabled during ad playback and ignored when focus is on a form input.
+
+### Volume slider
+
+On desktop (hover-capable devices), hovering over the mute icon expands an 80 px volume slider. Volume level persists across page reloads via `localStorage` (`rvp:volume`).
+
+### Playback rate
+
+A rate selector (`0.5×` → `2×`) appears in the control bar. The rate automatically resets to `1×` when an ad starts and restores the user's choice when content resumes.
+
+### Midroll position markers
+
+When `midrollVastUrls` is set, small amber dots appear on the seek bar at the scheduled timestamps.
+
+### Controls auto-hide
+
+Controls fade out after **3 seconds** of cursor inactivity during playback (matching YouTube's behaviour). Any mouse movement, touch, or keypress immediately reveals them. The cursor is also hidden when controls are hidden.
+
+### Picture-in-Picture
+
+```tsx
+<StreamingPlayer pip src="…" />
+<PlaylistPlayer  pip queue={[…]} />
+```
+
+Adds a PiP button to the control bar. The button reflects live PiP state (entered / exited) via the native browser `enterpictureinpicture` / `leavepictureinpicture` events.
+
+### Ad click-through
+
+When a VAST ad includes a `<ClickThrough>` URL, the **AD** badge (top-left of the player) becomes clickable. Clicking it:
+1. Opens the advertiser's URL in a new tab (`noopener,noreferrer`)
+2. Fires all `<ClickTracking>` beacons
+3. Emits `ad:click` on the event bus
+4. Keeps the ad playing in the background
+
+---
+
 ## API Reference
 
 ### Abstraction Layers
@@ -196,6 +249,7 @@ import { PlaylistPlayer, usePlaylist } from 'react-vast-player/playlist'
 | `onSeek` | `(time, state, config) => void` | — | Fires on seek |
 | `onStateChange` | `(state, config) => void` | — | Fires on any state transition |
 | `onAdError` | `({ reason, vastErrorCode }) => void` | — | Fires on any VAST/VMAP failure. Content auto-resumes within 500 ms |
+| `pip` | `boolean` | `false` | Enable Picture-in-Picture button in the control bar |
 
 ### `<PlaylistPlayer>`
 
@@ -207,6 +261,7 @@ import { PlaylistPlayer, usePlaylist } from 'react-vast-player/playlist'
 | `muted` | `boolean` | `false` | Start muted |
 | `midrollVastUrls` | `{ time: number; url: string }[]` | — | Midrolls applied to every item |
 | `vmapUrl` | `string` | — | VMAP schedule applied to every item. Overrides per-item `prerollVastUrl` and queue-level `midrollVastUrls` when set |
+| `pip` | `boolean` | `false` | Enable Picture-in-Picture button in the control bar |
 | `className` | `string` | — | |
 | `style` | `CSSProperties` | — | |
 | `renderItem` | `(item, index, total) => ReactNode` | — | Custom overlay per item |
@@ -384,6 +439,7 @@ interface ControlsState {
   volume: number
   muted: boolean
   fullscreen: boolean
+  playbackRate: number   // current playback speed (1 = normal)
 }
 ```
 
