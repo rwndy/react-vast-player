@@ -63,10 +63,7 @@ export function useStreamingPlayer(
   }, [config.src, config.vmapUrl])
 
   const onPlayEvent = useEffectEvent(() => {
-    const state = engineRef.current?.state ?? 'playing'
-    console.log('player state streaming=>', state)
-    console.log('config streaming => ', config)
-    handlers?.onPlay?.(state, config)
+    handlers?.onPlay?.(engineRef.current?.state ?? 'playing', config)
   })
   const onPauseEvent = useEffectEvent(() => {
     handlers?.onPause?.(engineRef.current?.state ?? 'paused', config)
@@ -75,8 +72,6 @@ export function useStreamingPlayer(
     handlers?.onStop?.(engineRef.current?.state ?? 'ended', config)
   })
   const onStateChangeEvent = useEffectEvent(({ state }: { state: PlayerState }) => {
-    console.log('player state streaming=>', state)
-    console.log('config streaming => ', config)
     handlers?.onStateChange?.(state, config)
   })
   const onAdErrorEvent = useEffectEvent(

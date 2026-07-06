@@ -52,9 +52,9 @@ export function useFeed(config: FeedConfig, handlers?: PlayerHandlers<FeedConfig
     const engine = engineRef.current
     if (!engine || !currentSlot) return
     if (currentSlot.type === 'content') {
-      engine.loadContent(currentSlot.item.src).catch(console.error)
+      engine.loadContent(currentSlot.item.src).catch(() => {})
     } else {
-      engine.runAdSlot(currentSlot.vastUrl).catch(console.error)
+      engine.runAdSlot(currentSlot.vastUrl).catch(() => {})
     }
   }, [index])
 
