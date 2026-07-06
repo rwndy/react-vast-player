@@ -11,6 +11,7 @@ const INITIAL: ControlsState = {
   volume: 1,
   muted: false,
   fullscreen: false,
+  playbackRate: 1,
 }
 
 type Action =
@@ -18,6 +19,7 @@ type Action =
   | { type: 'TIME'; currentTime: number; duration: number }
   | { type: 'VOL'; volume: number; muted: boolean }
   | { type: 'FULL'; fullscreen: boolean }
+  | { type: 'PLAYRATE'; playbackRate: number }
 
 function reducer(state: ControlsState, action: Action): ControlsState {
   switch (action.type) {
@@ -39,6 +41,8 @@ function reducer(state: ControlsState, action: Action): ControlsState {
       return { ...state, volume: action.volume, muted: action.muted }
     case 'FULL':
       return { ...state, fullscreen: action.fullscreen }
+    case 'PLAYRATE':
+      return { ...state, playbackRate: action.playbackRate }
     default:
       return state
   }
@@ -53,12 +57,15 @@ export interface UseControlsResult {
   setVolume: (v: number) => void
   toggleMute: () => void
   toggleFullscreen: () => void
+  setPlaybackRate: (rate: number) => void
 }
 
 // ISP: depends on IPlaybackControl only, not the full PlayerEngine
 export function useControls(player: IPlaybackControl | null): UseControlsResult {
   const [state, dispatch] = useReducer(reducer, INITIAL)
   const containerRef = useRef<HTMLDivElement>(null)
+  const userRateRef = useRef(1)
+  const adActiveRef = useRef(false)
 
 const onTime = useEffectEvent(
   ({ currentTime, duration }: { currentTime: number; duration: number }) => {
@@ -70,6 +77,12 @@ const onTime = useEffectEvent(
   useEffect(() => {
     const engine = player as any
     if (!engine?.bus) return
+
+    const stored = localStorage.getItem('rvp:volume')
+    if (stored !== null) {
+      const v = parseFloat(stored)
+      if (isFinite(v) && v >= 0 && v <= 1) player?.volume(v)
+    }
 
     dispatch({ type: 'VOL', volume: engine.tech?.volume ?? 1, muted: engine.muted ?? false })
 
@@ -84,6 +97,15 @@ const onTime = useEffectEvent(
       ),
       engine.bus.on('statechange', ({ state: s }: { state: string }) => {
         if (s === 'loading') dispatch({ type: 'RESET' })
+        if (s === 'ad' && !adActiveRef.current) {
+          adActiveRef.current = true
+          player?.setPlaybackRate(1)
+          dispatch({ type: 'PLAYRATE', playbackRate: 1 })
+        } else if (s !== 'ad' && adActiveRef.current) {
+          adActiveRef.current = false
+          player?.setPlaybackRate(userRateRef.current)
+          dispatch({ type: 'PLAYRATE', playbackRate: userRateRef.current })
+        }
       }),
     ]
 
@@ -118,7 +140,15 @@ const onTime = useEffectEvent(
   const play = useCallback(() => player?.play(), [player])
   const pause = useCallback(() => player?.pause(), [player])
   const seek = useCallback((t: number) => player?.seek(t), [player])
-  const setVolume = useCallback((v: number) => player?.volume(v), [player])
+  const setVolume = useCallback(
+    (v: number) => {
+      player?.volume(v)
+      try {
+        localStorage.setItem('rvp:volume', String(v))
+      } catch {}
+    },
+    [player],
+  )
   const toggleMute = useCallback(() => player?.mute(!state.muted), [player, state.muted])
   const toggleFullscreen = useCallback(() => {
     const el = containerRef.current
@@ -145,5 +175,53 @@ const onTime = useEffectEvent(
     }
   }, [])
 
-  return { state, containerRef, play, pause, seek, setVolume, toggleMute, toggleFullscreen }
+  const setPlaybackRate = (rate: number) => {
+    userRateRef.current = rate
+    player?.setPlaybackRate(rate)
+    dispatch({ type: 'PLAYRATE', playbackRate: rate })
+  }
+
+  const handleKey = useEffectEvent((e: KeyboardEvent) => {
+    const container = containerRef.current
+    if (!container?.contains(document.activeElement)) return
+    const tag = (document.activeElement as HTMLElement | null)?.tagName?.toLowerCase()
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') return
+    if (player?.state === 'ad') return
+
+    switch (e.key) {
+      case ' ': {
+        e.preventDefault()
+        if (state.playing) player?.pause()
+        else player?.play()
+        break
+      }
+      case 'ArrowLeft':
+        e.preventDefault()
+        player?.seek(Math.max(0, state.currentTime - 5))
+        break
+      case 'ArrowRight':
+        e.preventDefault()
+        player?.seek(Math.min(state.duration, state.currentTime + 5))
+        break
+      case 'm':
+      case 'M':
+        e.preventDefault()
+        player?.mute(!state.muted)
+        break
+      case 'f':
+      case 'F':
+        e.preventDefault()
+        toggleFullscreen()
+        break
+    }
+  })
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (el && !el.hasAttribute('tabindex')) el.tabIndex = 0
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [])
+
+  return { state, containerRef, play, pause, seek, setVolume, toggleMute, toggleFullscreen, setPlaybackRate }
 }
