@@ -299,5 +299,5 @@ Never push directly to `main` — branch protection is enforced.
 
 ---
 
-## Current version: 0.4.0 (feature/v0.4.0 branch)
+## Current version: 1.0.0 (feature/v1.0.0 branch)
 ## Roadmap: PLAN.md
