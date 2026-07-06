@@ -68,6 +68,8 @@ export class AdPodManager {
       skipOffset: ad.skipOffset ?? 0,
       podIndex: this.podIndex,
       podTotal: this.podTotal,
+      clickTrackingUrls: ad.clickTrackingUrls,
+      ...(ad.clickThroughUrl !== undefined ? { clickThroughUrl: ad.clickThroughUrl } : {}),
     })
 
     return new Promise<void>(resolve => {
