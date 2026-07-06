@@ -70,7 +70,7 @@ export function usePlaylist(
       : Promise.resolve(toItemSchedule(currentItem, config.midrollVastUrls))
     scheduleP
       .then(schedule => engine.loadContent(currentItem.src, schedule))
-      .catch(console.error)
+      .catch(() => {})
       .finally(() => {
         loadingRef.current = false
       })

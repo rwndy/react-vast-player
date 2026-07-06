@@ -110,6 +110,9 @@ Used internally by drop-in components. Also importable for custom UIs.
 | Tracking beacons | ads | BeaconFirer.ts |
 | Feed slot schedule | adapters/feed | FeedScheduler.ts |
 | VAST prefetching | adapters/feed | PrefetchQueue.ts |
+| Controls state + keyboard shortcuts | hooks | useControls.ts |
+| Controls auto-hide (idle detection) | hooks | useControlsVisibility.ts |
+| Picture-in-Picture | hooks | usePip.ts |
 
 ---
 
@@ -215,7 +218,7 @@ dist/
 ## Types
 
 - `PlayerState`: `'idle' | 'loading' | 'playing' | 'paused' | 'ad' | 'buffering' | 'error' | 'ended'`
-- `AdState`: `{ active, skippable, skipOffset, currentTime, podIndex, podTotal }`
+- `AdState`: `{ active, skippable, skipOffset, currentTime, podIndex, podTotal, clickThroughUrl?, clickTrackingUrls }`
 - `PlayerEventMap`: all events — `play`, `pause`, `timeupdate`, `statechange`, `ad:start`, `ad:skip`, `ad:quartile`, `ad:error`, `ad:pod:ended`, …
 
 ---
@@ -230,6 +233,8 @@ dist/
 - **VAST error codes** — ✅ 0.2.0. `ad:error.vastErrorCode` is now discriminated (301 wrapper timeout / 303 wrapper depth / 401 missing MediaFile / 402 media URI error / 403 unsupported codec / 900 generic). Throw `VastError(code, msg)` from `ads/` files so `AdOrchestrator` propagates the code through the bus payload.
 - **HLS via hls.js** — ✅ 0.2.0. `hls.js` is an **optional** peer dep. `Tech.swapSrc` auto-detects `.m3u8`; Safari uses native HLS, other browsers dynamically `import('hls.js')` and surface a clear install message if it's missing. Always run `tech.detachMedia()` (auto-called by `PlayerEngine.detachTech`) so the hls.js instance is destroyed.
 - **exactOptionalPropertyTypes** — optional props must never receive `T | undefined` directly. Use imperative builders or `?? default`.
+- **Ad click-through** — ✅ 0.3.0. Only the AD badge is clickable (not the entire video). Pause-on-click was removed: `blur`/`focus`/`visibilitychange` events are unreliable across Chrome/Safari for this use case, and Safari blocks `video.play()` from non-gesture handlers. Ad keeps playing while user is on advertiser's page.
+- **Controls auto-hide** — ✅ 0.3.0. `useControlsVisibility` hook manages idle timer (3s). Uses `useEffectEvent` to always read the latest `playing` state inside event listeners registered with `[]` deps.
 
 ---
 
@@ -291,5 +296,5 @@ Never push directly to `main` — branch protection is enforced.
 
 ---
 
-## Current version: 0.2.0
+## Current version: 0.3.0 (feature/v0.3.0 branch)
 ## Roadmap: PLAN.md

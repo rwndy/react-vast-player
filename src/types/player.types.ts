@@ -34,6 +34,8 @@ export interface PlayerEventMap {
     skipOffset: number
     podIndex: number
     podTotal: number
+    clickThroughUrl?: string
+    clickTrackingUrls: string[]
   }
   'ad:impression': void
   'ad:quartile': { quartile: AdQuartile }
@@ -51,6 +53,8 @@ export interface AdState {
   currentTime: number
   podIndex: number
   podTotal: number
+  clickThroughUrl?: string
+  clickTrackingUrls: string[]
 }
 
 export interface ControlsState {
@@ -61,6 +65,7 @@ export interface ControlsState {
   volume: number
   muted: boolean
   fullscreen: boolean
+  playbackRate: number
 }
 
 export interface StreamingConfig {
@@ -77,6 +82,7 @@ export interface StreamingConfig {
   autoplay?: boolean
   muted?: boolean
   loop?: boolean
+  pip?: boolean
 }
 
 export interface ContentItem {
@@ -120,6 +126,7 @@ export interface PlaylistConfig {
    * are ignored.
    */
   vmapUrl?: string
+  pip?: boolean
 }
 
 // ISP: focused interfaces — hooks depend only on the slice they need
@@ -129,10 +136,12 @@ export interface IPlaybackControl {
   seek(t: number): void
   mute(v: boolean): void
   volume(v: number): void
+  setPlaybackRate(rate: number): void
   readonly currentTime: number
   readonly duration: number
   readonly paused: boolean
   readonly muted: boolean
+  readonly playbackRate: number
   readonly state: PlayerState
 }
 
