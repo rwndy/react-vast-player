@@ -6,6 +6,9 @@ import { VideoSurface } from '../../components/VideoSurface'
 import { AdOverlay } from '../../components/AdOverlay'
 import { ControlBar } from '../../components/ControlBar'
 import { BufferingSpinner } from '../../components/BufferingSpinner'
+import { usePip } from '../../hooks/usePip'
+import { useControlsVisibility } from '../../hooks/useControlsVisibility'
+import { fireBeacons } from '../../ads/BeaconFirer'
 import type { PlaylistConfig, QueueItem, PlayerHandlers } from '../../types'
 import { JSX } from 'react/jsx-runtime'
 
@@ -35,6 +38,7 @@ export function PlaylistPlayer({
   } as PlayerHandlers<PlaylistConfig>)
   const {
     videoRef,
+    engineRef,
     adState,
     controls,
     containerRef,
@@ -46,19 +50,51 @@ export function PlaylistPlayer({
     prev,
     skipAd,
   } = api
+  const pip = usePip(videoRef)
+  const controlsVisible = useControlsVisibility(containerRef, controls.state.playing)
+
+  const handleAdClick = () => {
+    if (!adState.clickThroughUrl) return
+    fireBeacons(adState.clickTrackingUrls)
+    engineRef.current?.bus.emit('ad:click', { url: adState.clickThroughUrl })
+    window.open(adState.clickThroughUrl, '_blank', 'noopener,noreferrer')
+  }
 
   return (
     <div
       ref={containerRef}
       className={className}
-      style={{ position: 'relative', background: '#000', overflow: 'hidden', ...style }}
+      style={{
+        position: 'relative',
+        background: '#000',
+        overflow: 'hidden',
+        cursor: controls.state.playing && !controlsVisible ? 'none' : 'default',
+        ...style,
+      }}
     >
-      <VideoSurface ref={videoRef} muted={config.muted} autoPlay={config.autoplay} />
+      <VideoSurface
+        ref={videoRef}
+        muted={config.muted ?? false}
+        autoPlay={config.autoplay ?? false}
+        {...(currentItem?.poster !== undefined ? { poster: currentItem.poster } : {})}
+      />
       <BufferingSpinner visible={playerState === 'loading' || playerState === 'buffering'} />
       {currentItem && renderItem?.(currentItem, currentIndex, totalItems)}
       <Activity mode={adState.active ? 'visible' : 'hidden'}>
-        <AdOverlay adState={adState} onSkip={skipAd} />
+        <AdOverlay
+          adState={adState}
+          onSkip={skipAd}
+          {...(adState.clickThroughUrl ? { onClickAd: handleAdClick } : {})}
+        />
       </Activity>
+      <div
+        aria-hidden={!controlsVisible}
+        style={{
+          opacity: controlsVisible ? 1 : 0,
+          transition: 'opacity 0.3s ease',
+          pointerEvents: controlsVisible ? 'auto' : 'none',
+        }}
+      >
       <ControlBar
         state={controls.state}
         onPlay={controls.play}
@@ -66,8 +102,15 @@ export function PlaylistPlayer({
         onSeek={controls.seek}
         onToggleMute={controls.toggleMute}
         onToggleFullscreen={controls.toggleFullscreen}
+        onSetVolume={controls.setVolume}
+        onSetPlaybackRate={controls.setPlaybackRate}
+        {...(config.pip ? { onTogglePip: pip.togglePip, pipActive: pip.pipActive } : {})}
+        {...(config.midrollVastUrls
+          ? { midrollPositions: config.midrollVastUrls.map(m => m.time) }
+          : {})}
         disabled={adState.active}
       />
+      </div>
       <div
         style={{
           position: 'absolute',

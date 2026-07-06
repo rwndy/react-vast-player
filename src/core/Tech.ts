@@ -107,6 +107,12 @@ export class Tech {
   get volume(): number {
     return this.el.volume
   }
+  get playbackRate(): number {
+    return this.el.playbackRate
+  }
+  setPlaybackRate(rate: number): void {
+    this.el.playbackRate = rate
+  }
 
   bindEvents(bus: EventBus): () => void {
     const offs: (() => void)[] = []

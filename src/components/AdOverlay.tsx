@@ -19,24 +19,20 @@ export const AdOverlay = function AdOverlay({
 
   return (
     <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-      <AdBadge />
-      {onClickAd && (
-        <div
-          role="button"
-          aria-label="Learn more about this ad"
-          onClick={onClickAd}
-          style={{ position: 'absolute', inset: 0, cursor: 'pointer', pointerEvents: 'all' }}
-        />
-      )}
+      <AdBadge {...(onClickAd !== undefined ? { onClick: onClickAd } : {})} />
       {adState.skippable && <SkipButton canSkip={canSkip} remaining={remaining} onSkip={onSkip} />}
     </div>
   )
 }
 
-const AdBadge = function AdBadge() {
+const AdBadge = function AdBadge({ onClick }: { onClick?: () => void }) {
+  const clickable = onClick !== undefined
   return (
     <div
-      aria-hidden
+      {...(clickable
+        ? { role: 'button', 'aria-label': 'Learn more about this ad' }
+        : { 'aria-hidden': true })}
+      {...(clickable ? { onClick } : {})}
       style={{
         position: 'absolute',
         top: 12,
@@ -48,7 +44,9 @@ const AdBadge = function AdBadge() {
         padding: '2px 8px',
         borderRadius: 3,
         letterSpacing: '0.08em',
-        pointerEvents: 'none',
+        cursor: clickable ? 'pointer' : 'default',
+        pointerEvents: clickable ? 'all' : 'none',
+        userSelect: 'none',
       }}
     >
       AD

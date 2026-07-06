@@ -123,6 +123,12 @@ export class PlayerEngine implements IPlaybackControl, IAdControl {
   get muted(): boolean {
     return this.tech?.muted ?? false
   }
+  get playbackRate(): number {
+    return this.tech?.playbackRate ?? 1
+  }
+  setPlaybackRate(rate: number): void {
+    this.tech?.setPlaybackRate(rate)
+  }
 
   destroy(): void {
     this.detachTech()

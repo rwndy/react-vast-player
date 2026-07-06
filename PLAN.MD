@@ -218,7 +218,7 @@ codes that must be sent to the `<Error>` URL so ad servers know what failed.
 
 ## 🟡 Medium — Production quality
 
-### ☐ Keyboard shortcuts
+### ✅ Keyboard shortcuts
 
 **Shortcuts:**
 | Key | Action |
@@ -229,74 +229,63 @@ codes that must be sent to the `<Error>` URL so ad servers know what failed.
 | `m` | Toggle mute |
 | `f` | Toggle fullscreen |
 
-**Rules:**
-- Disabled during ad playback (no seeking)
-- No conflict with page inputs (`<input>`, `<textarea>`)
-- Only active when player container is focused
-
 **Location:** `src/hooks/useControls.ts`
 
 **Acceptance criteria:**
-- [ ] All 5 shortcuts work in streaming and playlist
-- [ ] Disabled during ads
-- [ ] No interference with page inputs
+- [x] All 5 shortcuts work in streaming and playlist
+- [x] Disabled during ads
+- [x] No interference with page inputs
 
 ---
 
-### ☐ Volume slider
+### ✅ Volume slider
 
 **Design:**
 - Desktop: mute icon → hover → slider expands (80px)
 - Mobile: mute icon only (no hover on touch devices)
-- Volume persists via `localStorage`
+- Volume persists via `localStorage` (`rvp:volume`)
+
+**Location:** `src/components/ControlBar.tsx`, `src/hooks/useControls.ts`
+
+**Acceptance criteria:**
+- [x] Slider visible on hover (desktop only, `(hover: hover)` media query)
+- [x] Volume persists across page reload
+- [x] Accessible — keyboard controllable
+
+---
+
+### ✅ Playback rate selector
+
+**Rates:** `0.5x / 0.75x / 1x / 1.25x / 1.5x / 2x`
+
+**Location:** `src/core/Tech.ts` + `src/components/ControlBar.tsx` + `src/hooks/useControls.ts`
+
+**Acceptance criteria:**
+- [x] Rate selector visible and functional
+- [x] Resets to `1x` on ad start, restores user rate when content resumes
+- [x] `setPlaybackRate` / `playbackRate` added to `IPlaybackControl`, `Tech`, `PlayerEngine`
+
+---
+
+### ✅ Midroll position markers on seek bar
+
+**Design:** Small amber dots on the progress rail at midroll timestamps.
 
 **Location:** `src/components/ControlBar.tsx`
 
 **Acceptance criteria:**
-- [ ] Slider visible on hover (desktop only)
-- [ ] Volume persists across page reload
-- [ ] Accessible — keyboard controllable
+- [x] Dots appear at correct positions for `midrollVastUrls` timestamps
+- [x] Auto-wired from `StreamingPlayer` and `PlaylistPlayer` config
 
 ---
 
-### ☐ Playback rate selector
-
-**Rates:** `0.5x / 0.75x / 1x / 1.25x / 1.5x / 2x`
-
-**Rules:**
-- Resets to `1x` when ad starts
-- Restores user's rate when content resumes
-- Not available during ad playback
-
-**Location:** `src/core/Tech.ts` (new `setPlaybackRate()`) +
-`src/components/ControlBar.tsx` (rate picker UI)
-
----
-
-### ☐ Midroll position markers on seek bar
-
-**Design:** Small amber dots on the progress rail at midroll timestamps.
-
-**New prop:**
-```tsx
-<ControlBar midrollPositions={[30, 60, 120]} />  // seconds
-```
-
-**Location:** `src/components/ControlBar.tsx`
-
----
-
-### ☐ Poster image support
-
-**Problem:** `poster` field exists in `ContentItem` and config types but
-is never passed to the `<video>` element.
-
-**Fix:** One line in `VideoSurface.tsx`:
-```tsx
-<video poster={poster} ... />
-```
+### ✅ Poster image support
 
 **Location:** `src/components/VideoSurface.tsx`
+
+**Acceptance criteria:**
+- [x] `poster` prop passed through to `<video>` element
+- [x] `StreamingPlayer` uses `config.poster`, `PlaylistPlayer` uses `currentItem.poster`
 
 ---
 
@@ -306,29 +295,54 @@ is never passed to the `<video>` element.
 
 ---
 
-### ☐ Picture-in-Picture support
+### ✅ Picture-in-Picture support
 
 **API:**
 ```tsx
 <StreamingPlayer pip />
 ```
 
-**Implementation:** `requestPictureInPicture()` on the video element.
-Show PiP button in `ControlBar`.
+**Location:** `src/hooks/usePip.ts`, `src/components/ControlBar.tsx`
+
+**Acceptance criteria:**
+- [x] PiP button appears when `pip` prop is set
+- [x] `pipActive` state tracked via `enterpictureinpicture` / `leavepictureinpicture` events
+- [x] `pip` prop added to `StreamingConfig` and `PlaylistConfig`
 
 ---
 
-### ☐ Ad click-through
-
-**Problem:** `clickThroughUrl` is parsed from VAST but never used.
-Users cannot click on ads to learn more.
+### ✅ Ad click-through
 
 **Implementation:**
-- Click on ad area → open `clickThroughUrl` in new tab
-- Fire `clickTrackingUrls` beacons
-- Pause video while URL is opening
+- Click on **AD badge** only (not entire video) → opens `clickThroughUrl` in new tab
+- Fires `clickTrackingUrls` beacons, emits `ad:click` on bus
+- Ad continues playing uninterrupted (pause-on-click is unreliable across browsers)
 
-**Location:** `src/components/AdOverlay.tsx`
+**Location:** `src/components/AdOverlay.tsx`, `StreamingPlayer.tsx`, `PlaylistPlayer.tsx`
+
+**Acceptance criteria:**
+- [x] AD badge is the only clickable area (not the entire video)
+- [x] `clickThroughUrl` + `clickTrackingUrls` surfaced through `AdState` via `ad:start` payload
+- [x] Ad keeps playing while user is on advertiser's page
+
+---
+
+### ✅ Controls auto-hide (YouTube-style)
+
+**Behaviour:**
+- Controls fade out after 3s of inactivity while playing
+- Show immediately on mousemove, mouseenter, touchstart, keydown
+- Always visible when paused / idle / loading
+- Cursor hidden when controls are hidden (playing + inactive)
+- Smooth `opacity 0.3s ease` transition
+
+**Location:** `src/hooks/useControlsVisibility.ts`
+
+**Acceptance criteria:**
+- [x] Controls hide after 3s during playback
+- [x] Controls show immediately on any activity
+- [x] Cursor hidden when controls are hidden
+- [x] Applied to `StreamingPlayer` and `PlaylistPlayer`
 
 ---
 
@@ -465,7 +479,7 @@ Run with `babel-plugin-react-compiler` and confirm:
 ```
 v0.1.x  ── Fix all 🔴 Critical bugs
 v0.2.0  ── HLS + VMAP + onAdError + VAST error codes
-v0.3.0  ── Keyboard + volume + poster + fullscreen fix + click-through
+v0.3.0  ── Keyboard + volume + poster + fullscreen + click-through + PiP + rate + auto-hide ✅
 v0.4.0  ── Test coverage 80% + E2E tests + real VAST server testing
 v1.0.0  ── API review + bundle audit + React Compiler verified + Storybook
 ```

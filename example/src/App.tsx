@@ -4,7 +4,7 @@ import { StreamingPlayer, PlaylistPlayer, FeedPlayer } from 'react-vast-player';
 import type { FeedSlot } from 'react-vast-player';
 import './App.css';
 
-type Tab = 'streaming' | 'playlist' | 'feed';
+type Tab = 'streaming' | 'playlist' | 'feed' | 'pip';
 
 const VAST =
     'https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/external/single_ad_samples&sz=640x480&cust_params=sample_ct%3Dlinear&ciu_szs=300x250%2C728x90&gdfp_req=1&output=vast&unviewed_position_start=1&env=vp&impl=s&correlator=';
@@ -13,6 +13,7 @@ const TABS: { id: Tab; label: string; desc: string }[] = [
     { id: 'streaming', label: 'Streaming', desc: 'Single video with pre / mid / post-roll VAST ads' },
     { id: 'playlist',  label: 'Playlist',  desc: 'Auto-advancing queue with per-item ad support' },
     { id: 'feed',      label: 'Feed',      desc: 'Swipeable feed with configurable ad intervals' },
+    { id: 'pip',       label: 'PiP',       desc: 'Picture-in-Picture + keyboard shortcut reference' },
 ];
 
 const CODE: Record<Tab, string> = {
@@ -41,6 +42,15 @@ const CODE: Record<Tab, string> = {
   autoplay muted
   renderItem={(slot) => <MyOverlay slot={slot} />}
 />`,
+    pip: `import { StreamingPlayer } from 'react-vast-player'
+
+// pip prop enables the PiP button in the control bar
+<StreamingPlayer
+  src="https://example.com/video.mp4"
+  prerollVastUrl={VAST_TAG_URL}
+  pip
+  autoplay muted
+/>`,
 };
 
 const FEED_ITEMS = [
@@ -60,6 +70,47 @@ const FEED_META: Record<string, { username: string; music: string; likes: string
     '5': { username: '@daily.life',   music: 'Grateful · ambient',                 likes: '670K', comments: '4.8K',  shares: '19K'  },
     '6': { username: '@explore.vid',  music: 'Discovery · chill hop',              likes: '1.5M', comments: '11.3K', shares: '67K'  },
 };
+
+const SHORTCUTS = [
+    { key: 'Space', label: 'Play / Pause' },
+    { key: '← →',  label: 'Seek ±5s' },
+    { key: 'M',     label: 'Mute' },
+    { key: 'F',     label: 'Fullscreen' },
+];
+
+function KeyboardGuide(): React.JSX.Element {
+    return (
+        <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '8px 20px',
+            padding: '10px 0 2px',
+            borderTop: '1px solid rgba(255,255,255,0.07)',
+            marginTop: 2,
+        }}>
+            <span style={{ width: '100%', fontSize: 11, color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 2 }}>
+                Keyboard shortcuts (click player to focus)
+            </span>
+            {SHORTCUTS.map(({ key, label }) => (
+                <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <kbd style={{
+                        background: 'rgba(255,255,255,0.07)',
+                        border: '1px solid rgba(255,255,255,0.14)',
+                        borderRadius: 4,
+                        padding: '2px 8px',
+                        fontSize: 11,
+                        fontFamily: 'monospace',
+                        color: '#bbb',
+                        whiteSpace: 'nowrap',
+                    }}>
+                        {key}
+                    </kbd>
+                    <span style={{ fontSize: 12, color: '#666' }}>{label}</span>
+                </div>
+            ))}
+        </div>
+    );
+}
 
 function ActionBtn({ icon, count }: { icon: React.ReactNode; count: string }): React.JSX.Element {
     return (
@@ -254,6 +305,17 @@ export default function App() {
                                 onStateChange={(state, cfg) => console.log('[feed] stateChange', state, cfg)}
                             />
                         )}
+                        {tab === 'pip' && (
+                            <StreamingPlayer
+                                key='pip'
+                                pip
+                                src='https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8'
+                                prerollVastUrl={VAST}
+                                muted
+                                autoplay
+                                style={{ width: '100%', height: '100%' }}
+                            />
+                        )}
                         <div className='frame-corner tl' aria-hidden />
                         <div className='frame-corner tr' aria-hidden />
                         <div className='frame-corner bl' aria-hidden />
@@ -265,6 +327,7 @@ export default function App() {
                         <span className='meta-sep'>—</span>
                         <span className='meta-desc'>{active.desc}</span>
                     </div>
+                    {tab !== 'feed' && <KeyboardGuide />}
                 </section>
 
                 <div className='code-panel'>

@@ -18,3 +18,5 @@ Thumbs.db
 npm-debug.log*
 
 .vscode
+.github
+.claude

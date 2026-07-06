@@ -4,6 +4,7 @@ interface VideoSurfaceProps {
   muted?: boolean | undefined
   autoPlay?: boolean | undefined
   playsInline?: boolean | undefined
+  poster?: string | undefined
   style?: React.CSSProperties
   className?: string | undefined
 }
@@ -11,7 +12,7 @@ interface VideoSurfaceProps {
 export const VideoSurface: ForwardRefExoticComponent<
   VideoSurfaceProps & RefAttributes<HTMLVideoElement>
 > = forwardRef<HTMLVideoElement, VideoSurfaceProps>(function VideoSurface(
-  { muted = false, autoPlay = false, playsInline = true, style, className },
+  { muted = false, autoPlay = false, playsInline = true, poster, style, className },
   ref,
 ) {
   return (
@@ -21,6 +22,7 @@ export const VideoSurface: ForwardRefExoticComponent<
       autoPlay={autoPlay}
       playsInline={playsInline}
       controls={false}
+      {...(poster !== undefined ? { poster } : {})}
       preload="metadata"
       className={className}
       style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', ...style }}
