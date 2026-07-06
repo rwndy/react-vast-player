@@ -30,6 +30,7 @@ export interface UsePlayerEngineResult {
   playerState: PlayerState
 }
 
+/** @experimental Low-level engine lifecycle hook — prefer useStreamingPlayer/useFeed/usePlaylist. */
 export function usePlayerEngine(): UsePlayerEngineResult {
   const videoRef = useRef<HTMLVideoElement>(null)
   const engineRef = useRef<PlayerEngine>(null)

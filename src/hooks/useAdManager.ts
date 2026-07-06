@@ -52,6 +52,7 @@ function reducer(state: AdState, action: AdAction): AdState {
   }
 }
 
+/** @experimental Low-level ad state hook — prefer useStreamingPlayer/useFeed/usePlaylist. */
 export function useAdManager(engine: PlayerEngine | null): AdState {
   const [state, dispatch] = useReducer(reducer, INITIAL_AD)
 

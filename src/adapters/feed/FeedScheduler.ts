@@ -6,6 +6,7 @@ interface BuildOptions {
   adInterval?: number
 }
 
+/** @experimental Internal feed slot builder — API may change before v1.0.0. */
 export function buildFeedSchedule({
   items,
   vastUrls = [],

@@ -9,6 +9,7 @@ export interface AdScheduleConfig {
   postrollUrl?: string
 }
 
+/** @experimental Internal ad slot scheduler — API may change before v1.0.0. */
 export class AdScheduler {
   private prerollConsumed = false
   private postrollConsumed = false

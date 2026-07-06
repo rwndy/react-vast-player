@@ -1,6 +1,6 @@
 {
   "name": "react-vast-player",
-  "version": "0.2.2",
+  "version": "1.0.0",
   "description": "Mode-agnostic React video engine with first-class VAST support. No plugins.",
   "repository": {
     "type": "git",
@@ -90,6 +90,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\""
   },
@@ -108,6 +109,8 @@
     "@types/jsdom": "^28.0.3",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@vitest/coverage-v8": "^2.1.9",
+    "babel-plugin-react-compiler": "^1.0.0",
     "hls.js": "^1.6.16",
     "jsdom": "^29.1.1",
     "lucide-react": "^1.14.0",
