@@ -11,6 +11,7 @@ const QUARTILES: { pct: number; name: AdQuartile; event: VastTrackingEvent }[] =
   { pct: 0.75, name: 'third', event: 'thirdQuartile' },
 ]
 
+/** @experimental Internal VAST pod sequencer — API may change before v1.0.0. */
 export class AdPodManager {
   private currentAd: VastAd | null = null
   private quartilesFired = new Set<string>()

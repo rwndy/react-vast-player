@@ -11,6 +11,7 @@ const PASSTHROUGH = [
 
 const SWAP_TIMEOUT_MS = 5_000
 
+/** @experimental Low-level HTMLVideoElement wrapper — API may change before v1.0.0. */
 export class Tech {
   private srcVersion = 0
   private hls: HlsHandle | null = null
@@ -206,7 +207,7 @@ export class Tech {
 
   private async resumeAudio(): Promise<void> {
     try {
-      const AudioCtx = window.AudioContext ?? (window as any).webkitAudioContext
+      const AudioCtx = window.AudioContext ?? window.webkitAudioContext
       if (AudioCtx) {
         const ctx = new AudioCtx()
         if (ctx.state === 'suspended') await ctx.resume()
